@@ -68,7 +68,7 @@ export default function Dashboard() {
     if (!tickets.length) return alert("No ticket logs available");
 
     const headers = [
-      "Category","Sub Category","Description","Site","Date",
+      "Categorys","Sub Category","Description","Site","Date",
       "Priority","Status","Contact","Email","Attachments"
     ];
 
