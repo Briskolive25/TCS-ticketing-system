@@ -1,72 +1,72 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbwRsnyvSnbmwB6MdHqjmQsKpFtoFPZ5nqtDAkrKkmmRWZ07gSWkgy4Jj85grIeMnRwz/exec";
+
 const Login = () => {
-  const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       alert("Please enter email and password");
       return;
     }
-    navigate("/dashboard");
+
+    setLoading(true);
+
+    try {
+      const url = `${API_URL}?action=login&email=${encodeURIComponent(
+        email
+      )}&password=${encodeURIComponent(password)}`;
+
+      const res = await fetch(url);
+      const result = await res.json();
+
+      if (result.status === "success") {
+        localStorage.setItem("user", JSON.stringify(result.user));
+        localStorage.setItem("userRole", result.user.role);
+        localStorage.setItem("Name", result.user.name);
+
+        navigate("/admin-dashboard");
+      } else {
+        alert(result.message);
+      }
+    } catch (err) {
+      alert("Server error. Try again.");
+    }
+
+    setLoading(false);
   };
 
   return (
     <div style={page}>
       <div style={card}>
-        {/* BRAND */}
         <h1 style={brand}>TCS Ticketing</h1>
         <p style={subtitle}>Support & Issue Management Portal</p>
 
-        {!role ? (
-          <>
-            <h3 style={sectionTitle}>Select Login Type</h3>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={input}
+        />
 
-            <button style={roleBtn} onClick={() => setRole("TCS")}>
-              TCS User
-            </button>
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={input}
+        />
 
-            <button style={roleBtn} onClick={() => setRole("Brisk Olive")}>
-              Brisk Olive User
-            </button>
-
-            <button style={roleBtn} onClick={() => setRole("Admin")}>
-              Admin (Brisk Olive)
-            </button>
-          </>
-        ) : (
-          <>
-            <h3 style={sectionTitle}>{role} Login</h3>
-
-            <input
-              type="email"
-              placeholder="Official Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={input}
-            />
-
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={input}
-            />
-
-            <button style={loginBtn} onClick={handleLogin}>
-              Login
-            </button>
-
-            <button style={backBtn} onClick={() => setRole("")}>
-              ← Change Login Type
-            </button>
-          </>
-        )}
+        <button style={loginBtn} onClick={handleLogin} disabled={loading}>
+          {loading ? "Signing in..." : "Login"}
+        </button>
       </div>
     </div>
   );
@@ -103,23 +103,6 @@ const subtitle = {
   color: "#666",
 };
 
-const sectionTitle = {
-  marginBottom: 20,
-  color: "#333",
-};
-
-const roleBtn = {
-  width: "100%",
-  padding: 14,
-  marginBottom: 12,
-  borderRadius: 8,
-  border: "1px solid #d1d5db",
-  background: "#f9fafb",
-  fontWeight: 600,
-  cursor: "pointer",
-  transition: "0.2s",
-};
-
 const input = {
   width: "100%",
   padding: 12,
@@ -138,15 +121,6 @@ const loginBtn = {
   color: "#fff",
   fontWeight: 600,
   cursor: "pointer",
-  marginBottom: 12,
 };
 
-const backBtn = {
-  border: "none",
-  background: "transparent",
-  color: "#1a5cff",
-  cursor: "pointer",
-  fontSize: 13,
-};
-
-export default Login; 
+export default Login;

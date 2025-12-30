@@ -4,39 +4,73 @@ import LoginPage from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Operations from './pages/Operations';
 import AdminDashboard from './pages/AdminDashboard';
+import Support from './pages/Support';
 
 function App() {
+  const role = localStorage.getItem("userRole");
+
   return (
     <div className="flex">
       {/* LEFT SIDEBAR */}
       <div className="w-[260px] fixed h-full bg-[#1f2d3d] text-white">
-        <div className="p-6 text-xl font-semibold">
-          TCS Ticketing System
-        </div>
+        
 
         <nav className="mt-4 space-y-3 px-4">
-          <a href="/dashboard" className="block bg-blue-600 px-4 py-2 rounded text-white">
-            Dashboard
-          </a>
+          {/* USER DASHBOARD */}
+         
 
-          <a href="/operations" className="block bg-blue-600 px-4 py-2 rounded text-white">
-            Brisk Olive Operations Team
-          </a>
+          {/* ADMIN LINKS */}
+          {role === "Admin" && (
+            <>
+              <a
+                href="/operations"
+                className="block bg-blue-600 px-4 py-2 rounded text-white"
+              >
+                Brisk Olive Operations Team
+              </a>
 
-          <a href="/admin-dashboard" className="block bg-blue-600 px-4 py-2 rounded text-white">
-            Admin Dashboard
-          </a>
+              <a
+                href="/admin-dashboard"
+                className="block bg-blue-600 px-4 py-2 rounded text-white"
+              >
+                Admin Dashboard
+              </a>
+            </>
+          )}
         </nav>
       </div>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <div className="ml-[260px] w-full min-h-screen bg-gray-50 p-6">
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/operations" element={<Operations />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/support" element={<Support />} />
+
+          {/* USER ROUTES */}
+          {role !== "Admin" && (
+            <>
+            <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/operations" element={<Operations />} />
+            </>
+          )}
+
+          {/* ADMIN ROUTES */}
+          {role === "Admin" && (
+            <>
+              <Route path="/operations" element={<Operations />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            </>
+          )}
+
+          {/* DEFAULT REDIRECT */}
+          <Route
+            path="*"
+            element={
+              role === "Admin"
+                ? <Navigate to="/operations" replace />
+                : <Navigate to="/dashboard" replace />
+            }
+          />
         </Routes>
       </div>
     </div>

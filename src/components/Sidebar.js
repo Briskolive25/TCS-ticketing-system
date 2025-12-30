@@ -2,6 +2,8 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 
 const Sidebar = () => {
+  const role = localStorage.getItem("userRole");
+
   return (
     <aside style={sidebarStyle}>
       {/* BRAND */}
@@ -16,9 +18,18 @@ const Sidebar = () => {
       {/* MENU */}
       <nav>
         <ul style={menuStyle}>
-          <MenuItem to="/dashboard" label="Dashboard" />
-          <MenuItem to="/operations" label="Operations Team" />
-          <MenuItem to="/admin-dashboard" label="Admin Dashboard" />
+          {role !== "Admin" && (
+            <>
+              <MenuItem to="/dashboard" label="Dashboard" />
+              <MenuItem to="/operations" label="Operations Team" />
+            </>
+          )}
+          {role === "Admin" && (
+            <>
+              <MenuItem to="/operations" label="Operations Team" />
+              <MenuItem to="/admin-dashboard" label="Admin Dashboard" />
+            </>
+          )}
         </ul>
       </nav>
 
