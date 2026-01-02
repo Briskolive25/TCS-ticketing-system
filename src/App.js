@@ -20,7 +20,7 @@ function App() {
          
 
           {/* ADMIN LINKS */}
-          {role === "Admin" && (
+          {role !== "Admin" && (
             <>
               <a
                 href="/operations"
@@ -66,9 +66,9 @@ function App() {
           <Route
             path="*"
             element={
-              role === "Admin"
-                ? <Navigate to="/operations" replace />
-                : <Navigate to="/dashboard" replace />
+              role
+                ? <Navigate to={role === "Admin" ? "/admin-dashboard" : "/dashboard"} />
+                : <Navigate to="/login" />
             }
           />
         </Routes>

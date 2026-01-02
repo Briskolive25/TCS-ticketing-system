@@ -1,21 +1,43 @@
 import React, { useState } from "react";
 import "./RaiseTicket.css";
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwRsnyvSnbmwB6MdHqjmQsKpFtoFPZ5nqtDAkrKkmmRWZ07gSWkgy4Jj85grIeMnRwz/exec";
 
-export default function RaiseTicket({ onSubmit }) {
+const SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbwRsnyvSnbmwB6MdHqjmQsKpFtoFPZ5nqtDAkrKkmmRWZ07gSWkgy4Jj85grIeMnRwz/exec";
+
+export default function RaiseTicket() {
   const subCategories = {
-    "Attendance / Timesheet Issues": ["Incorrect attendance", "Missing mandays", "Shift mismatch"],
-    "Manpower Deployment Issues": ["Resource not reporting", "Sudden resignation", "Replacement request"],
-    "Payment / Billing Concerns": ["Wrong invoice", "Rate mismatch", "Extra mandays clarification"],
-    "Performance & Conduct Issues": ["Behavioural complaint", "Not following process", "Quality issues"],
-    "System / Technical Issues": ["Report not received", "Portal upload-related", "App login issues"],
+    "Attendance / Timesheet Issues": [
+      "Incorrect attendance",
+      "Missing mandays",
+      "Shift mismatch",
+    ],
+    "Manpower Deployment Issues": [
+      "Resource not reporting",
+      "Sudden resignation",
+      "Replacement request",
+    ],
+    "Payment / Billing Concerns": [
+      "Wrong invoice",
+      "Rate mismatch",
+      "Extra mandays clarification",
+    ],
+    "Performance & Conduct Issues": [
+      "Behavioural complaint",
+      "Not following process",
+      "Quality issues",
+    ],
+    "System / Technical Issues": [
+      "Report not received",
+      "Portal upload-related",
+      "App login issues",
+    ],
     Miscellaneous: ["Any ad-hoc concern"],
   };
 
   const categories = Object.keys(subCategories);
   const priorityOptions = ["Critical", "High", "Medium", "Low"];
 
-  const [form, setForm] = useState({
+  const initialForm = {
     category: "",
     subCategory: "",
     description: "",
@@ -27,14 +49,24 @@ export default function RaiseTicket({ onSubmit }) {
     phone: "",
     attachments: [],
     status: "Open",
-  });
+  };
 
-  // Function to format date as DD MMM YYYY
+  const [form, setForm] = useState(initialForm);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  // ✅ Date format: 30 dec 2025
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
     const date = new Date(dateStr);
-    const options = { day: "2-digit", month: "short", year: "numeric" };
-    return date.toLocaleDateString("en-GB", options); // e.g., 28 Dec 2025
+
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = date
+      .toLocaleString("en-GB", { month: "short" })
+      .toLowerCase();
+    const year = date.getFullYear();
+
+    return `${day} ${month} ${year}`;
   };
 
   const handleChange = (e) => {
@@ -45,7 +77,7 @@ export default function RaiseTicket({ onSubmit }) {
     } else if (name === "attachments") {
       setForm({ ...form, attachments: Array.from(files) });
     } else if (name === "date") {
-      setForm({ ...form, date: formatDate(value) }); // format date
+      setForm({ ...form, date: formatDate(value) });
     } else {
       setForm({ ...form, [name]: value });
     }
@@ -53,6 +85,8 @@ export default function RaiseTicket({ onSubmit }) {
 
   const submitForm = async () => {
     try {
+      setLoading(true);
+
       const formData = new FormData();
       formData.append("action", "addTicket");
       formData.append("data", JSON.stringify(form));
@@ -65,100 +99,175 @@ export default function RaiseTicket({ onSubmit }) {
       const result = await res.json();
 
       if (result.status === "success") {
-        alert("Ticket Raised Successfully!");
+        setSuccess(true);
+        setForm(initialForm);
+        setTimeout(() => setSuccess(false), 2500);
       } else {
         alert(result.message);
       }
     } catch (err) {
-      console.error(err);
       alert("Submission Failed");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="page">
-      <h2 className="page-title">Brisk olive Support</h2>
+    <>
+      {/* NAVBAR */}
+      <header className="navbar">
+        <div className="nav-left">
+          <img
+            src="https://ik.imagekit.io/wovz8p4ck/Logo%20and%20navbar/image%201.png"
+            alt="Brisk Olive"
+          />
+        </div>
+        <div className="nav-right">Support Portal</div>
+      </header>
 
-      <div className="card">
-        <div className="form-grid">
-          <div className="form-group">
-            <label>Category</label>
-            <select name="category" value={form.category} onChange={handleChange}>
-              <option value="">Select</option>
-              {categories.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
+      {/* PAGE */}
+      <main className="page">
+        {!success && (
+          <div className="card vertical">
+            <h2 className="page-title">Raise Support Ticket</h2>
+
+            <div className="form-grid vertical-grid">
+              <div className="form-group">
+                <label>Category</label>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                >
+                  <option value="">Select</option>
+                  {categories.map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Sub-category</label>
+                <select
+                  name="subCategory"
+                  value={form.subCategory}
+                  onChange={handleChange}
+                  disabled={!form.category}
+                >
+                  <option value="">Select</option>
+                  {(subCategories[form.category] || []).map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Priority</label>
+                <select
+                  name="priority"
+                  value={form.priority}
+                  onChange={handleChange}
+                >
+                  <option value="">Select</option>
+                  {priorityOptions.map((p) => (
+                    <option key={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Site / Center</label>
+                <input
+                  name="site"
+                  value={form.site}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Date of Issue</label>
+                <input type="date" name="date" onChange={handleChange} />
+                {form.date && <div className="muted">Date: {form.date}</div>}
+              </div>
+
+              <div className="form-group">
+                <label>Contact Person</label>
+                <input
+                  name="contact"
+                  value={form.contact}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group full">
+                <label>Description</label>
+                <textarea
+                  rows="2"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="form-group full">
+                <label>Attachments</label>
+                <input
+                  type="file"
+                  multiple
+                  name="attachments"
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div className="actions">
+              <button
+                className="btn-primary"
+                onClick={submitForm}
+                disabled={loading}
+              >
+                Submit Ticket
+              </button>
+            </div>
           </div>
+        )}
 
-          <div className="form-group">
-            <label>Sub-category</label>
-            <select
-              name="subCategory"
-              value={form.subCategory}
-              onChange={handleChange}
-              disabled={!form.category}
-            >
-              <option value="">Select</option>
-              {(subCategories[form.category] || []).map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
+        {/* SUCCESS MESSAGE */}
+        {success && (
+          <div className="success-box">
+            <h3>🎉 Ticket Submitted Successfully</h3>
+            <p>Our support team will get back to you shortly.</p>
           </div>
+        )}
+      </main>
 
-          <div className="form-group full">
-            <label>Description</label>
-            <textarea name="description" value={form.description} onChange={handleChange} rows="4" />
-          </div>
-
-          <div className="form-group">
-            <label>Site / Center</label>
-            <input name="site" value={form.site} onChange={handleChange} />
-          </div>
-
-          <div className="form-group">
-            <label>Date of Issue</label>
-            <input type="date" onChange={handleChange} name="date" />
-            {form.date && <div style={{ marginTop: "5px" }}>Date: {form.date}</div>}
-          </div>
-
-          <div className="form-group">
-            <label>Priority</label>
-            <select name="priority" value={form.priority} onChange={handleChange}>
-              <option value="">Select</option>
-              {priorityOptions.map((p) => (
-                <option key={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Contact Person</label>
-            <input name="contact" value={form.contact} onChange={handleChange} />
-          </div>
-
-          <div className="form-group">
-            <label>Email</label>
-            <input name="email" value={form.email} onChange={handleChange} />
-          </div>
-
-          <div className="form-group">
-            <label>Phone</label>
-            <input name="phone" value={form.phone} onChange={handleChange} />
-          </div>
-
-          <div className="form-group full">
-            <label>Attachments</label>
-            <input type="file" multiple name="attachments" onChange={handleChange} />
+      {/* LOADER */}
+      {loading && (
+        <div className="loader-overlay">
+          <div className="loader-box">
+            <div className="spinner"></div>
+            <p>Please wait...</p>
           </div>
         </div>
-
-        <div className="actions">
-          <button className="btn-primary" onClick={submitForm}>
-            Submit Ticket
-          </button>
-        </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
