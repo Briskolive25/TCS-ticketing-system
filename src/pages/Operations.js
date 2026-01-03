@@ -5,6 +5,11 @@ import Sidebar from "../components/Sidebar";
 const SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbwRsnyvSnbmwB6MdHqjmQsKpFtoFPZ5nqtDAkrKkmmRWZ07gSWkgy4Jj85grIeMnRwz/exec";
 
+/* ===== DROPDOWN OPTIONS ===== */
+const ASSIGNEES = ["Anshika", "Harsh", "Akash", "Aditya", "Tanisha", "Laksh"];
+const SLA_OPTIONS = ["4 Hours", "24 Hours", "48 Hours", "72 Hours"];
+const TAG_OPTIONS = ["Replacement", "Attendance", "Payment"];
+
 export default function Operations() {
   const userRole = localStorage.getItem("userRole");
   const userName = localStorage.getItem("Name");
@@ -25,34 +30,13 @@ export default function Operations() {
 
   const [tickets, setTickets] = useState([]);
 
-  const statusOptions = [
-    "Open",
-    "Assigned",
-    "In Progress",
-    "Waiting for Client Response",
-    "Resolved – Pending Client Confirmation",
-    "Closed",
-    "Reopened",
-  ];
-
   /* ================= FETCH ================= */
   useEffect(() => {
     fetch(`${SCRIPT_URL}?action=getTickets`)
       .then((res) => res.json())
       .then((result) => {
         if (result.status === "success") {
-          let allTickets = result.data.map((t) => ({
-            ...t,
-            allocationDetails: {
-              assignedTo: t.allocatedTo,
-              allocationStatus: t.allocationStatus,
-              slaTimer: t.slaTimer,
-              notes: t.notes,
-              tags: t.tags,
-              resolution: t.resolution,
-              attachment: t.attachment,
-            },
-          }));
+          let allTickets = result.data;
 
           if (userRole === "Executive") {
             allTickets = allTickets.filter(
@@ -71,17 +55,25 @@ export default function Operations() {
   /* ================= OPEN MODAL ================= */
   const openAllocate = (ticket, viewOnly = false) => {
     setSelectedTicket(ticket);
-    setIsViewOnly(viewOnly);
+
+    // Executive-specific logic
+    let execViewOnly = false;
+    if (userRole === "Executive") {
+      const execCompleted =
+        ticket.resolution?.trim() && ticket.attachment?.trim();
+      execViewOnly = execCompleted || viewOnly;
+    }
+
+    setIsViewOnly(execViewOnly);
 
     setForm({
       assignedTo: ticket.allocatedTo || "",
-      allocationStatus:
-        ticket.allocationDetails?.allocationStatus || "Open",
-      slaTimer: ticket.allocationDetails?.slaTimer || "",
-      notes: ticket.allocationDetails?.notes || "",
-      tags: ticket.allocationDetails?.tags || "",
-      resolution: ticket.allocationDetails?.resolution || "",
-      attachment: ticket.allocationDetails?.attachment || "",
+      allocationStatus: ticket.allocationStatus || "Open",
+      slaTimer: ticket.slaTimer || "",
+      notes: ticket.notes || "",
+      tags: ticket.tags || "",
+      resolution: ticket.resolution || "",
+      attachment: ticket.attachment || "",
     });
 
     setShowForm(true);
@@ -92,7 +84,7 @@ export default function Operations() {
     const payload = {
       ticketId: selectedTicket.id,
       assignedTo: form.assignedTo,
-      allocationStatus: form.allocationStatus,
+      allocationStatus: "Open",
       slaTimer: form.slaTimer,
       notes: form.notes,
       tags: form.tags,
@@ -116,7 +108,12 @@ export default function Operations() {
                 ...t,
                 allocatedTo: form.assignedTo,
                 allocationStatus: form.allocationStatus,
-                allocationDetails: { ...form },
+                resolution: form.resolution,
+                attachment: form.attachment,
+                execStatus:
+                  form.resolution?.trim() && form.attachment?.trim()
+                    ? "Completed"
+                    : t.execStatus || "",
               }
             : t
         )
@@ -154,8 +151,10 @@ export default function Operations() {
           <tbody>
             {tickets.map((t) => {
               const hasResolutionAndAttachment =
-                t.allocationDetails?.resolution?.trim() &&
-                t.allocationDetails?.attachment?.trim();
+                t.resolution?.trim() && t.attachment?.trim();
+
+              const isFullyCompleted =
+                hasResolutionAndAttachment && t.adminFinalStatus;
 
               return (
                 <tr key={t.id}>
@@ -165,27 +164,42 @@ export default function Operations() {
                   <td style={td}>{t.site}</td>
                   <td style={td}>{t.date}</td>
                   <td style={td}>{t.priority}</td>
-                  <td style={td}>{t.allocationStatus}</td>
+
+                  {/* Show status ONLY after allocation */}
+                  <td style={td}>{t.allocatedTo ? "Open" : ""}</td>
+
                   <td style={td}>{t.contact}</td>
                   <td style={td}>{t.email}</td>
                   <td style={td}>{t.phone}</td>
                   <td style={td}>{t.allocationStatus}</td>
 
-                  {/* ✅ FINAL ACTION LOGIC */}
+                  {/* Executive Status
                   <td style={td}>
-                    {hasResolutionAndAttachment ? (
+                    {hasResolutionAndAttachment ? "Completed" : t.execStatus || ""}
+                  </td> */}
+
+                  {/* Action Column */}
+                  <td style={td}>
+                    {!t.allocatedTo ? (
+                      <button
+                        style={editBtn}
+                        onClick={() => openAllocate(t, false)}
+                      >
+                        Allocate
+                      </button>
+                    ) : hasResolutionAndAttachment && !t.adminFinalStatus ? (
+                      <button
+                        style={editBtn}
+                        onClick={() => openAllocate(t, false)}
+                      >
+                        Edit
+                      </button>
+                    ) : (
                       <button
                         style={viewBtn}
                         onClick={() => openAllocate(t, true)}
                       >
                         View Details
-                      </button>
-                    ) : (
-                      <button
-                        style={editBtn}
-                        onClick={() => openAllocate(t, false)}
-                      >
-                        {t.allocatedTo ? "Edit" : "Allocate"}
                       </button>
                     )}
                   </td>
@@ -196,6 +210,7 @@ export default function Operations() {
         </table>
       </div>
 
+      {/* ================= MODAL ================= */}
       {showForm && (
         <div style={overlay}>
           <div style={modal}>
@@ -204,59 +219,130 @@ export default function Operations() {
             </h3>
 
             <div style={grid}>
-              {[
-                ["Assigned To", "assignedTo"],
-                ["SLA Timer", "slaTimer"],
-                ["Tags", "tags"],
-                ["Internal Notes", "notes"],
-                ["Resolution Summary", "resolution"],
-                ["Closure Attachment", "attachment"],
-              ].map(([label, key]) => (
-                <div key={key} style={field}>
-                  <label style={labelStyle}>{label}</label>
-                  {isViewOnly ? (
-                    <div style={viewBox}>{form[key] || "—"}</div>
-                  ) : (
-                    <textarea
-                      style={textarea}
-                      value={form[key]}
-                      onChange={(e) =>
-                        setForm({ ...form, [key]: e.target.value })
-                      }
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {userRole === "Admin" && isViewOnly && (
-              <div style={confirmBox}>
-                <label style={labelStyle}>Update Ticket Status</label>
-                <select
-                  style={textarea}
-                  value={form.allocationStatus}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      allocationStatus: e.target.value,
-                    })
-                  }
-                >
-                  {statusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  style={{ ...btnPrimary, marginTop: 12, width: "100%" }}
-                  onClick={saveAllocation}
-                >
-                  Save Status
-                </button>
+              {/* Assigned To */}
+              <div style={field}>
+                <label style={labelStyle}>Assigned To</label>
+                {userRole === "Executive" ? (
+                  <div style={viewBox}>{form.assignedTo || "—"}</div>
+                ) : isViewOnly ? (
+                  <div style={viewBox}>{form.assignedTo || "—"}</div>
+                ) : (
+                  <select
+                    style={textarea}
+                    value={form.assignedTo}
+                    onChange={(e) =>
+                      setForm({ ...form, assignedTo: e.target.value })
+                    }
+                  >
+                    <option value="">Select</option>
+                    {ASSIGNEES.map((a) => (
+                      <option key={a} value={a}>
+                        {a}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
-            )}
+
+              {/* STATUS (READ-ONLY OPEN) */}
+              <div style={field}>
+                <label style={labelStyle}>Status</label>
+                <input style={textarea} value="Open" disabled />
+              </div>
+
+              {/* SLA */}
+              <div style={field}>
+                <label style={labelStyle}>SLA Timer</label>
+                {userRole === "Executive" || isViewOnly ? (
+                  <div style={viewBox}>{form.slaTimer || "—"}</div>
+                ) : (
+                  <select
+                    style={textarea}
+                    value={form.slaTimer}
+                    onChange={(e) =>
+                      setForm({ ...form, slaTimer: e.target.value })
+                    }
+                  >
+                    <option value="">Select</option>
+                    {SLA_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Tags */}
+              <div style={field}>
+                <label style={labelStyle}>Tags</label>
+                {userRole === "Executive" || isViewOnly ? (
+                  <div style={viewBox}>{form.tags || "—"}</div>
+                ) : (
+                  <select
+                    style={textarea}
+                    value={form.tags}
+                    onChange={(e) =>
+                      setForm({ ...form, tags: e.target.value })
+                    }
+                  >
+                    <option value="">Select</option>
+                    {TAG_OPTIONS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div style={field}>
+                <label style={labelStyle}>Internal Notes</label>
+                {userRole === "Executive" || isViewOnly ? (
+                  <div style={viewBox}>{form.notes || "—"}</div>
+                ) : (
+                  <textarea
+                    style={textarea}
+                    value={form.notes}
+                    onChange={(e) =>
+                      setForm({ ...form, notes: e.target.value })
+                    }
+                  />
+                )}
+              </div>
+
+              {/* Executive-only fields */}
+              <div style={field}>
+                <label style={labelStyle}>Resolution Summary</label>
+                {isViewOnly && userRole === "Executive" ? (
+                  <div style={viewBox}>{form.resolution || "—"}</div>
+                ) : (
+                  <textarea
+                    style={textarea}
+                    value={form.resolution}
+                    onChange={(e) =>
+                      setForm({ ...form, resolution: e.target.value })
+                    }
+                  />
+                )}
+              </div>
+
+              <div style={field}>
+                <label style={labelStyle}>Closure Attachment</label>
+                {isViewOnly && userRole === "Executive" ? (
+                  <div style={viewBox}>{form.attachment || "—"}</div>
+                ) : (
+                  <textarea
+                    style={textarea}
+                    value={form.attachment}
+                    onChange={(e) =>
+                      setForm({ ...form, attachment: e.target.value })
+                    }
+                  />
+                )}
+              </div>
+            </div>
 
             <div style={footer}>
               <button style={btnGhost} onClick={() => setShowForm(false)}>
@@ -336,7 +422,7 @@ const labelStyle = {
 };
 
 const textarea = {
-  minHeight: 50,
+  minHeight: 40,
   padding: 8,
   borderRadius: 6,
   border: "1px solid #ccc",
@@ -346,15 +432,7 @@ const viewBox = {
   background: "#f4f6fb",
   padding: 10,
   borderRadius: 6,
-  minHeight: 42,
-};
-
-const confirmBox = {
-  marginTop: 20,
-  padding: 15,
-  background: "#fff3f3",
-  border: "1px solid #ffcfcf",
-  borderRadius: 8,
+  minHeight: 40,
 };
 
 const footer = {
