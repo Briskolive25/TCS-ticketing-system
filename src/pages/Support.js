@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import Select from "react-select";
 import "./RaiseTicket.css";
 
 const SCRIPT_URL =
@@ -36,39 +37,64 @@ export default function RaiseTicket() {
 
   const categories = Object.keys(subCategories);
   const priorityOptions = ["Critical", "High", "Medium", "Low"];
+  const todayISO = new Date().toISOString().split("T")[0];
 
   const initialForm = {
+    email: "",
+    contact: "",
+    phone: "",
+    date: "",
     category: "",
     subCategory: "",
-    description: "",
-    site: "",
-    date: "",
     priority: "",
-    contact: "",
-    email: "",
-    phone: "",
+    tcCode: "",
+    tcName: "",
+    city: "",
+    state: "",
+    site: "",
+    description: "",
     attachments: [],
     status: "Open",
   };
 
   const [form, setForm] = useState(initialForm);
+  const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // ✅ Date format: 30 dec 2025
+  /* ---------- DATE FORMAT: 06 Jan 2025 ---------- */
   const formatDate = (dateStr) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = date
-      .toLocaleString("en-GB", { month: "short" })
-      .toLowerCase();
-    const year = date.getFullYear();
-
+    const d = new Date(dateStr);
+    const day = d.getDate().toString().padStart(2, "0");
+    const month = d.toLocaleString("en-GB", { month: "short" });
+    const year = d.getFullYear();
     return `${day} ${month} ${year}`;
   };
 
+  /* ---------- AUTO-FILL EMAIL ---------- */
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("support_email");
+    if (savedEmail) setForm((p) => ({ ...p, email: savedEmail }));
+  }, []);
+
+  /* ---------- FETCH TC MASTER ---------- */
+  const fetchSites = useCallback(async () => {
+    try {
+      const res = await fetch(`${SCRIPT_URL}?action=getSites`);
+      const data = await res.json();
+      if (data.status === "success") {
+        setSites(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch sites", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSites();
+  }, [fetchSites]);
+
+  /* ---------- INPUT HANDLER ---------- */
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
@@ -83,9 +109,48 @@ export default function RaiseTicket() {
     }
   };
 
+  /* ---------- TC SEARCH SELECT ---------- */
+  const handleTcSelect = (option) => {
+    if (!option) {
+      setForm({
+        ...form,
+        tcCode: "",
+        tcName: "",
+        city: "",
+        state: "",
+        site: "",
+      });
+      return;
+    }
+
+    setForm({
+      ...form,
+      tcCode: option.value,
+      tcName: option.tcName,
+      city: option.city,
+      state: option.state,
+      site: `${option.state} | ${option.city} | ${option.value} | ${option.tcName}`,
+    });
+  };
+
+  const tcOptions = sites.map((s) => ({
+    value: String(s.tcCode),
+    label: `${s.tcCode} | ${s.tcName} | ${s.city} | ${s.state}`,
+    tcName: s.tcName,
+    city: s.city,
+    state: s.state,
+  }));
+
+  /* ---------- SUBMIT ---------- */
   const submitForm = async () => {
+    if (!form.email || !form.tcCode) {
+      alert("Email and TC Code are required");
+      return;
+    }
+
     try {
       setLoading(true);
+      localStorage.setItem("support_email", form.email);
 
       const formData = new FormData();
       formData.append("action", "addTicket");
@@ -101,11 +166,10 @@ export default function RaiseTicket() {
       if (result.status === "success") {
         setSuccess(true);
         setForm(initialForm);
-        setTimeout(() => setSuccess(false), 2500);
       } else {
-        alert(result.message);
+        alert(result.message || "Submission failed");
       }
-    } catch (err) {
+    } catch {
       alert("Submission Failed");
     } finally {
       setLoading(false);
@@ -114,7 +178,6 @@ export default function RaiseTicket() {
 
   return (
     <>
-      {/* NAVBAR */}
       <header className="navbar">
         <div className="nav-left">
           <img
@@ -125,7 +188,6 @@ export default function RaiseTicket() {
         <div className="nav-right">Support Portal</div>
       </header>
 
-      {/* PAGE */}
       <main className="page">
         {!success && (
           <div className="card vertical">
@@ -133,12 +195,60 @@ export default function RaiseTicket() {
 
             <div className="form-grid vertical-grid">
               <div className="form-group">
-                <label>Category</label>
-                <select
-                  name="category"
-                  value={form.category}
+                <label>Email</label>
+                <input name="email" value={form.email} onChange={handleChange} />
+              </div>
+
+              <div className="form-group">
+                <label>Contact Person</label>
+                <input name="contact" value={form.contact} onChange={handleChange} />
+              </div>
+
+              <div className="form-group">
+                <label>Phone</label>
+                <input name="phone" value={form.phone} onChange={handleChange} />
+              </div>
+
+              <div className="form-group">
+                <label>Date of Issue</label>
+                <input
+                  type="date"
+                  defaultValue={todayISO}
+                  name="date"
                   onChange={handleChange}
-                >
+                />
+                {form.date && <div className="muted">Date: {form.date}</div>}
+              </div>
+
+              <div className="form-group">
+                <label>TC Code</label>
+                <Select
+                  options={tcOptions}
+                  onChange={handleTcSelect}
+                  placeholder="Search TC Code / City / State"
+                  isClearable
+                  isSearchable
+                />
+              </div>
+
+              <div className="form-group">
+                <label>TC Name</label>
+                <input value={form.tcName} disabled />
+              </div>
+
+              <div className="form-group">
+                <label>City</label>
+                <input value={form.city} disabled />
+              </div>
+
+              <div className="form-group">
+                <label>State</label>
+                <input value={form.state} disabled />
+              </div>
+
+              <div className="form-group">
+                <label>Category</label>
+                <select name="category" value={form.category} onChange={handleChange}>
                   <option value="">Select</option>
                   {categories.map((c) => (
                     <option key={c}>{c}</option>
@@ -163,58 +273,12 @@ export default function RaiseTicket() {
 
               <div className="form-group">
                 <label>Priority</label>
-                <select
-                  name="priority"
-                  value={form.priority}
-                  onChange={handleChange}
-                >
+                <select name="priority" value={form.priority} onChange={handleChange}>
                   <option value="">Select</option>
                   {priorityOptions.map((p) => (
                     <option key={p}>{p}</option>
                   ))}
                 </select>
-              </div>
-
-              <div className="form-group">
-                <label>Site / Center</label>
-                <input
-                  name="site"
-                  value={form.site}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Date of Issue</label>
-                <input type="date" name="date" onChange={handleChange} />
-                {form.date && <div className="muted">Date: {form.date}</div>}
-              </div>
-
-              <div className="form-group">
-                <label>Contact Person</label>
-                <input
-                  name="contact"
-                  value={form.contact}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Phone</label>
-                <input
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                />
               </div>
 
               <div className="form-group full">
@@ -229,45 +293,33 @@ export default function RaiseTicket() {
 
               <div className="form-group full">
                 <label>Attachments</label>
-                <input
-                  type="file"
-                  multiple
-                  name="attachments"
-                  onChange={handleChange}
-                />
+                <input type="file" multiple name="attachments" onChange={handleChange} />
               </div>
             </div>
 
             <div className="actions">
-              <button
-                className="btn-primary"
-                onClick={submitForm}
-                disabled={loading}
-              >
-                Submit Ticket
-              </button>
-            </div>
+  <button className="btn-primary" onClick={submitForm} disabled={loading}>
+    {loading ? (
+      <span className="loader-inline">
+        <span className="spinner" />
+        Submitting…
+      </span>
+    ) : (
+      "Submit Ticket"
+    )}
+  </button>
+</div>
+
           </div>
         )}
 
-        {/* SUCCESS MESSAGE */}
         {success && (
           <div className="success-box">
-            <h3>🎉 Ticket Submitted Successfully</h3>
-            <p>Our support team will get back to you shortly.</p>
+            <h3>Please wait…</h3>
+            <p>Your ticket has been successfully submitted.</p>
           </div>
         )}
       </main>
-
-      {/* LOADER */}
-      {loading && (
-        <div className="loader-overlay">
-          <div className="loader-box">
-            <div className="spinner"></div>
-            <p>Please wait...</p>
-          </div>
-        </div>
-      )}
     </>
   );
 }

@@ -36,3 +36,120 @@
     transform: rotate(360deg);
   }
 }
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+/* NAVBAR */
+.navbar {
+  height: 70px;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid #ddd;
+}
+
+.nav-left img {
+  height: 40px;
+}
+
+.nav-right {
+  font-weight: 600;
+}
+
+/* PAGE */
+.page.no-scroll {
+  height: calc(100vh - 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f7fb;
+  overflow: hidden;
+}
+
+/* CARD */
+.compact-card {
+  width: 92%;
+  max-width: 1150px;
+  height: 85vh; /* 🔥 increased height */
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* TITLE */
+.compact-title {
+  font-size: 22px;
+  margin-bottom: 18px;
+}
+
+/* FORM GRID */
+.compact-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 28px;
+  flex-grow: 1;
+}
+
+/* INPUTS */
+.compact-form input,
+.compact-form select {
+  height: 48px;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #cfd6e4;
+  border-radius: 6px;
+}
+
+/* TEXTAREA */
+.compact-form textarea {
+  height: 90px;
+  padding: 10px 12px;
+  resize: none;
+  grid-column: span 2;
+  border: 1px solid #cfd6e4;
+  border-radius: 6px;
+}
+
+/* FILE */
+.compact-form input[type="file"] {
+  grid-column: span 2;
+  height: 46px;
+}
+
+/* ACTIONS */
+.compact-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btn-primary {
+  height: 44px;
+  padding: 0 26px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* SUCCESS */
+.success-box {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 10px;
+  text-align: center;
+}
+

@@ -87,7 +87,18 @@ export default function Operations() {
 
     setShowForm(true);
   };
+const formatDate = (dateValue) => {
+  if (!dateValue) return "—";
 
+  const date = new Date(dateValue);
+  if (isNaN(date)) return dateValue;
+
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
   /* ================= SAVE CHANGES ================= */
   const saveAllocation = async () => {
     if (!selectedTicket?.id) {
@@ -139,6 +150,25 @@ export default function Operations() {
       alert("Network error while saving.");
     }
   };
+    /* ================= KPI COUNTS ================= */
+  const totalTickets = tickets.length;
+
+  const openTickets = tickets.filter(
+    (t) => t.status === "Open"
+  ).length;
+
+  const closedTickets = tickets.filter(
+    (t) => t.status === "Closed"
+  ).length;
+
+  const inProgressTickets = tickets.filter(
+    (t) =>
+      t.status !== "Closed" &&
+      (t.allocatedTo ||
+        t.resolution?.trim() ||
+        t.attachment?.trim())
+  ).length;
+
 
   return (
     <div style={{ display: "flex" }}>
@@ -151,6 +181,28 @@ export default function Operations() {
             Refresh Tickets
           </button>
         </div>
+        <div style={{ display: "flex", gap: 20, marginBottom: 25 }}>
+  <div style={kpiCard}>
+    <div style={kpiLabel}>Total Tickets</div>
+    <div style={kpiValue}>{totalTickets}</div>
+  </div>
+
+  <div style={{ ...kpiCard, borderLeft: "5px solid #ff6b00" }}>
+    <div style={kpiLabel}>Open Tickets</div>
+    <div style={kpiValue}>{openTickets}</div>
+  </div>
+
+  <div style={{ ...kpiCard, borderLeft: "5px solid #1a5cff" }}>
+    <div style={kpiLabel}>In Progress</div>
+    <div style={kpiValue}>{inProgressTickets}</div>
+  </div>
+
+  <div style={{ ...kpiCard, borderLeft: "5px solid #28a745" }}>
+    <div style={kpiLabel}>Closed Tickets</div>
+    <div style={kpiValue}>{closedTickets}</div>
+  </div>
+</div>
+
 
         {loading ? (
           <p>Loading tickets...</p>
@@ -187,8 +239,7 @@ export default function Operations() {
                     <td style={td}>{t.subCategory}</td>
                     <td style={td}>{t.description?.slice(0, 50)}...</td>
                     <td style={td}>{t.site}</td>
-                    <td style={td}>{t.date}</td>
-                    <td style={td}>{t.priority}</td>
+ <td style={td}>{formatDate(t.date)}</td>                    <td style={td}>{t.priority}</td>
                     <td style={td}>
                       <strong style={{ color: t.status === "Closed" ? "#28a745" : "#ff6b00" }}>
                         {t.status || "Open"}
@@ -267,6 +318,9 @@ export default function Operations() {
                       disabled={!form.resolution?.trim() || !form.attachment?.trim()}
                     >
                       <option value="Open">Open</option>
+                      <option value="Closed">Closed</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Reopened">Reopened</option>
                       <option value="Closed">Closed</option>
                     </select>
                     <small style={{ color: "#666", fontSize: 12 }}>
@@ -483,4 +537,25 @@ const btnGhost = {
   border: "1px solid #ccc",
   borderRadius: 8,
   cursor: "pointer",
+};
+const kpiCard = {
+  flex: 1,
+  background: "#fff",
+  padding: 20,
+  borderRadius: 10,
+  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+  borderLeft: "5px solid #6c757d",
+};
+
+const kpiLabel = {
+  fontSize: 14,
+  color: "#666",
+  marginBottom: 8,
+  fontWeight: 500,
+};
+
+const kpiValue = {
+  fontSize: 28,
+  fontWeight: 700,
+  color: "#222",
 };
