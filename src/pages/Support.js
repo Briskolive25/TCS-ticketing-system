@@ -62,7 +62,7 @@ export default function RaiseTicket() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  /* ---------- DATE FORMAT: 06 Jan 2025 ---------- */
+  /* ---------- DATE FORMAT ---------- */
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
     const day = d.getDate().toString().padStart(2, "0");
@@ -74,7 +74,9 @@ export default function RaiseTicket() {
   /* ---------- AUTO-FILL EMAIL ---------- */
   useEffect(() => {
     const savedEmail = localStorage.getItem("support_email");
-    if (savedEmail) setForm((p) => ({ ...p, email: savedEmail }));
+    if (savedEmail) {
+      setForm((p) => ({ ...p, email: savedEmail }));
+    }
   }, []);
 
   /* ---------- FETCH TC MASTER ---------- */
@@ -83,7 +85,7 @@ export default function RaiseTicket() {
       const res = await fetch(`${SCRIPT_URL}?action=getSites`);
       const data = await res.json();
       if (data.status === "success") {
-        setSites(data.data);
+        setSites(data.data || []);
       }
     } catch (err) {
       console.error("Failed to fetch sites", err);
@@ -143,8 +145,21 @@ export default function RaiseTicket() {
 
   /* ---------- SUBMIT ---------- */
   const submitForm = async () => {
-    if (!form.email || !form.tcCode) {
-      alert("Email and TC Code are required");
+    // ✅ EMAIL VALIDATION
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!form.email) {
+      alert("Email is required");
+      return;
+    }
+
+    if (!emailRegex.test(form.email)) {
+      alert("Please enter a valid email address (must contain @)");
+      return;
+    }
+
+    if (!form.tcCode) {
+      alert("TC Code is required");
       return;
     }
 
@@ -169,7 +184,8 @@ export default function RaiseTicket() {
       } else {
         alert(result.message || "Submission failed");
       }
-    } catch {
+    } catch (error) {
+      console.error(error);
       alert("Submission Failed");
     } finally {
       setLoading(false);
@@ -196,7 +212,13 @@ export default function RaiseTicket() {
             <div className="form-grid vertical-grid">
               <div className="form-group">
                 <label>Email</label>
-                <input name="email" value={form.email} onChange={handleChange} />
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="example@company.com"
+                />
               </div>
 
               <div className="form-group">
@@ -211,12 +233,7 @@ export default function RaiseTicket() {
 
               <div className="form-group">
                 <label>Date of Issue</label>
-                <input
-                  type="date"
-                  defaultValue={todayISO}
-                  name="date"
-                  onChange={handleChange}
-                />
+                <input type="date" defaultValue={todayISO} name="date" onChange={handleChange} />
                 {form.date && <div className="muted">Date: {form.date}</div>}
               </div>
 
@@ -298,24 +315,16 @@ export default function RaiseTicket() {
             </div>
 
             <div className="actions">
-  <button className="btn-primary" onClick={submitForm} disabled={loading}>
-    {loading ? (
-      <span className="loader-inline">
-        <span className="spinner" />
-        Submitting…
-      </span>
-    ) : (
-      "Submit Ticket"
-    )}
-  </button>
-</div>
-
+              <button className="btn-primary" onClick={submitForm} disabled={loading}>
+                {loading ? "Submitting..." : "Submit Ticket"}
+              </button>
+            </div>
           </div>
         )}
 
         {success && (
           <div className="success-box">
-            <h3>Please wait…</h3>
+            <h3>Thank you!</h3>
             <p>Your ticket has been successfully submitted.</p>
           </div>
         )}

@@ -18,10 +18,12 @@ export default function Operations() {
   const [showForm, setShowForm] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [isViewOnly, setIsViewOnly] = useState(false);
+  const [saving, setSaving] = useState(false);
+
 
   const [form, setForm] = useState({
     assignedTo: "",
-    status: "Open",
+    status: "",
     slaTimer: "",
     notes: "",
     tags: "",
@@ -30,37 +32,46 @@ export default function Operations() {
   });
 
   /* ================= FETCH TICKETS ================= */
-  const fetchTickets = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${SCRIPT_URL}?action=getTickets`);
-      const result = await res.json();
+  const normalizeStatus = (status) =>
+  status ? status.trim().toLowerCase() : "open";
 
-      if (result.status === "success") {
-        let allTickets = result.data || [];
+const fetchTickets = async () => {
+  setLoading(true);
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=getTickets`);
+    const result = await res.json();
 
-        // For Executives: only show tickets assigned to them
-        if (userRole === "Executive") {
-          allTickets = allTickets.filter((ticket) => {
-            const assigned = ticket.allocatedTo?.trim();
-            return assigned && assigned.toLowerCase() === userName?.trim().toLowerCase();
-          });
-        }
+    if (result.status === "success") {
+      let allTickets = (result.data || []).map((t) => ({
+        ...t,
+        rawStatus: t.status, // keep original
+        status: normalizeStatus(t.status),
 
-        // Sort by newest first
-        allTickets.sort((a, b) => (b.id || 0) - (a.id || 0));
+      }));
 
-        setTickets(allTickets);
-      } else {
-        alert("Error loading tickets: " + (result.message || "Unknown"));
+      if (userRole === "Executive") {
+        allTickets = allTickets.filter((ticket) => {
+          const assigned = ticket.allocatedTo?.trim();
+          return (
+            assigned &&
+            assigned.toLowerCase() === userName?.trim().toLowerCase()
+          );
+        });
       }
-    } catch (err) {
-      console.error("Fetch error:", err);
-      alert("Failed to connect to server. Check internet or script URL.");
-    } finally {
-      setLoading(false);
+
+      allTickets.sort((a, b) => (b.id || 0) - (a.id || 0));
+      setTickets(allTickets);
+    } else {
+      alert("Error loading tickets");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load tickets");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchTickets();
@@ -70,14 +81,14 @@ export default function Operations() {
   const openAllocate = (ticket) => {
     setSelectedTicket(ticket);
 
-    const isClosed = ticket.status?.trim() === "Closed";
+    const isClosed = ticket.status?.trim() === "closed";
     const viewOnly = userRole === "Executive" ? isClosed : isClosed;
 
     setIsViewOnly(viewOnly);
 
     setForm({
       assignedTo: ticket.allocatedTo || "",
-      status: ticket.status || "Open",
+      status: ticket.rawStatus || "open",
       slaTimer: ticket.slaTimer || "",
       notes: ticket.notes || "",
       tags: ticket.tags || "",
@@ -88,7 +99,7 @@ export default function Operations() {
     setShowForm(true);
   };
 const formatDate = (dateValue) => {
-  if (!dateValue) return "—";
+  if (!dateValue) return "—"; 
 
   const date = new Date(dateValue);
   if (isNaN(date)) return dateValue;
@@ -101,73 +112,93 @@ const formatDate = (dateValue) => {
 };
   /* ================= SAVE CHANGES ================= */
   const saveAllocation = async () => {
-    if (!selectedTicket?.id) {
-      alert("No ticket selected");
-      return;
+  if (!selectedTicket?.id) {
+    alert("No ticket selected");
+    return;
+  }
+  console.log("Form data to save:", form);
+
+  const hasResolution = form.resolution?.trim().length > 0;
+  const hasAttachment = form.attachment?.trim().length > 0;
+
+  let finalStatus = form.status;
+
+  // ✅ Admin / Ops can close after confirmation
+  if (userRole !== "Executive" && hasResolution && hasAttachment) {
+    const confirmClose = window.confirm(
+      "Executive has completed the work. Do you want to CLOSE this ticket?"
+    );
+
+    if (confirmClose) {
+      finalStatus = "closed";
+
+      // 🔥 IMPORTANT: UPDATE FORM STATE ALSO
+      setForm((prev) => ({
+        ...prev,
+        status: "closed",
+      }));
     }
+  }
 
-    const hasResolution = form.resolution?.trim().length > 0;
-    const hasAttachment = form.attachment?.trim().length > 0;
-
-    let finalStatus = form.status;
-
-    // Only non-Executive (Admin/Operations) can close the ticket
-    if (userRole !== "Executive" && hasResolution && hasAttachment) {
-      if (window.confirm("Executive has completed the work. Do you want to CLOSE this ticket?")) {
-        finalStatus = "Closed";
-      }
-    }
-
-    const payload = {
-      ticketId: selectedTicket.id,
-      assignedTo: form.assignedTo.trim(),
-      status: finalStatus,
-      slaTimer: form.slaTimer,
-      notes: form.notes,
-      tags: form.tags,
-      resolution: form.resolution,
-      attachment: form.attachment,
-    };
-
-    try {
-      const res = await fetch(`${SCRIPT_URL}?action=saveAllocation`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ data: JSON.stringify(payload) }),
-      });
-
-      const result = await res.json();
-
-      if (result.status === "success") {
-        alert("Ticket updated successfully!");
-        setShowForm(false);
-        fetchTickets(); // Refresh list to show latest data
-      } else {
-        alert("Save failed: " + (result.message || "Unknown error"));
-      }
-    } catch (err) {
-      console.error("Save error:", err);
-      alert("Network error while saving.");
-    }
+  const payload = {
+    ticketId: selectedTicket.id,
+    assignedTo: form.assignedTo.trim(),
+    status:
+  finalStatus.charAt(0).toUpperCase() +
+  finalStatus.slice(1).toLowerCase(),
+    slaTimer: form.slaTimer,
+    notes: form.notes,
+    tags: form.tags,
+    resolution: form.resolution,
+    attachment: form.attachment,
   };
+
+  try {
+    setSaving(true);
+
+    const res = await fetch(`${SCRIPT_URL}?action=saveAllocation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ data: JSON.stringify(payload) }),
+    });
+
+    const result = await res.json();
+
+    if (result.status === "success") {
+      alert("Ticket updated successfully!");
+      setShowForm(false);
+      fetchTickets(); // ✅ table refresh now shows Closed
+    } else {
+      alert("Save failed: " + (result.message || "Unknown error"));
+    }
+  } catch (err) {
+    console.error("Save error:", err);
+    alert("Network error while saving.");
+  } finally {
+    setSaving(false);
+  }
+};
+
+
     /* ================= KPI COUNTS ================= */
   const totalTickets = tickets.length;
 
-  const openTickets = tickets.filter(
-    (t) => t.status === "Open"
-  ).length;
+const openTickets = tickets.filter(
+  (t) => t.status === "open"
+).length;
 
-  const closedTickets = tickets.filter(
-    (t) => t.status === "Closed"
-  ).length;
+const closedTickets = tickets.filter(
+  (t) => t.status === "closed"
+).length;
 
-  const inProgressTickets = tickets.filter(
-    (t) =>
-      t.status !== "Closed" &&
-      (t.allocatedTo ||
-        t.resolution?.trim() ||
-        t.attachment?.trim())
-  ).length;
+const inProgressTickets = tickets.filter(
+  (t) =>
+    t.status !== "closed" &&
+    (t.allocatedTo ||
+      t.resolution?.trim() ||
+      t.attachment?.trim())
+).length;
+
 
 
   return (
@@ -205,72 +236,92 @@ const formatDate = (dateValue) => {
 
 
         {loading ? (
-          <p>Loading tickets...</p>
-        ) : tickets.length === 0 ? (
-          <p>
-            No tickets found.
-            {userRole === "Executive" ? " (None assigned to you yet)" : ""}
-          </p>
-        ) : (
-          <table style={table}>
-            <thead style={thead}>
-              <tr>
-                <th style={th}>ID</th>
-                <th style={th}>Category</th>
-                <th style={th}>Sub-category</th>
-                <th style={th}>Description</th>
-                <th style={th}>Site</th>
-                <th style={th}>Date</th>
-                <th style={th}>Priority</th>
-                <th style={th}>Status</th>
-                <th style={th}>Assigned To</th>
-                <th style={th}>Executive Progress</th>
-                <th style={th}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tickets.map((t) => {
-                const execDone = t.resolution?.trim() && t.attachment?.trim();
+  <p>Loading tickets...</p>
+) : tickets.length === 0 ? (
+  <p>
+    No tickets found.
+    {userRole === "Executive" ? " (None assigned to you yet)" : ""}
+  </p>
+) : (
+  /* ✅ CHANGE 1: table wrapped */
+  <div style={tableWrapper}>
+    <table style={table}>
+      <thead style={thead}>
+        <tr>
+          <th style={th}>ID</th>
+          <th style={th}>Email</th>
+          <th style={th}>Contact Person</th>
+          <th style={th}>Phone</th>
+          <th style={th}>Category</th>
+          <th style={th}>Sub-category</th>
+          <th style={th}>Description</th>
+          <th style={th}>Site</th>
+          <th style={th}>Date</th>
+          <th style={th}>Priority</th>
+          <th style={th}>Status</th>
+          <th style={th}>Assigned To</th>
+          <th style={th}>Executive Progress</th>
+          <th style={th}>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {tickets.map((t) => {
+          const execDone = t.resolution?.trim() && t.attachment?.trim();
 
-                return (
-                  <tr key={t.id}>
-                    <td style={td}>{t.id}</td>
-                    <td style={td}>{t.category}</td>
-                    <td style={td}>{t.subCategory}</td>
-                    <td style={td}>{t.description?.slice(0, 50)}...</td>
-                    <td style={td}>{t.site}</td>
- <td style={td}>{formatDate(t.date)}</td>                    <td style={td}>{t.priority}</td>
-                    <td style={td}>
-                      <strong style={{ color: t.status === "Closed" ? "#28a745" : "#ff6b00" }}>
-                        {t.status || "Open"}
-                      </strong>
-                    </td>
-                    <td style={td}>{t.allocatedTo || "—"}</td>
-                    <td style={td}>
-                      {execDone ? (
-                        <span style={{ color: "#28a745", fontWeight: "bold" }}>Completed</span>
-                      ) : (
-                        <span style={{ color: "#dc3545" }}>Pending</span>
-                      )}
-                    </td>
-                    <td style={td}>
-                      {t.status === "Closed" ? (
-                        <button style={viewBtn} onClick={() => openAllocate(t)}>
-                          View
-                        </button>
-                      ) : (
-                        <button style={editBtn} onClick={() => openAllocate(t)}>
-                          {t.allocatedTo ? (execDone ? "Review" : "Update") : "Allocate"}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+          return (
+            <tr key={t.id}>
+              <td style={td}>{t.id}</td>
+              <td style={td}>{t.email || "—"}</td>
+              <td style={td}>{t.contact || "—"}</td>
+              <td style={td}>{t.phone || "—"}</td>
+              <td style={td}>{t.category}</td>
+              <td style={td}>{t.subCategory}</td>
+              <td style={td}>{t.description?.slice(0, 50)}...</td>
+              <td style={td}>{t.site}</td>
+              <td style={td}>{formatDate(t.date)}</td>
+              <td style={td}>{t.priority}</td>
+              <td style={td}>
+                <strong
+                  style={{
+                    color: t.status === "closed" ? "#28a745" : "#ff6b00",
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {t.status}
+                </strong>
+              </td>
+              <td style={td}>{t.allocatedTo || "—"}</td>
+              <td style={td}>
+                {execDone ? (
+                  <span style={{ color: "#28a745", fontWeight: "bold" }}>
+                    Completed
+                  </span>
+                ) : (
+                  <span style={{ color: "#dc3545" }}>Pending</span>
+                )}
+              </td>
+              <td style={td}>
+                {t.status === "closed" ? (
+                  <button style={viewBtn} onClick={() => openAllocate(t)}>
+                    View
+                  </button>
+                ) : (
+                  <button style={editBtn} onClick={() => openAllocate(t)}>
+                    {t.allocatedTo
+                      ? execDone
+                        ? "Review"
+                        : "Update"
+                      : "Allocate"}
+                  </button>
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+)}
 
       {/* ================= MODAL ================= */}
       {showForm && (
@@ -329,6 +380,7 @@ const formatDate = (dateValue) => {
                   </div>
                 )}
               </div>
+            
 
               {/* SLA Timer */}
               <div style={field}>
@@ -422,28 +474,44 @@ const formatDate = (dateValue) => {
               </div>
             </div>
 
-            <div style={footer}>
-              <button style={btnGhost} onClick={() => setShowForm(false)}>
-                Cancel
-              </button>
-              {!isViewOnly && (
-                <button style={btnPrimary} onClick={saveAllocation}>
-                  Save Changes
-                </button>
-              )}
-            </div>
-          </div>
+        <div style={footer}>
+  <button style={btnGhost} onClick={() => setShowForm(false)}>
+    Cancel
+  </button>
+
+  {!isViewOnly && (
+    <button
+      style={{
+        ...btnPrimary,
+        opacity: saving ? 0.7 : 1,
+        cursor: saving ? "not-allowed" : "pointer",
+      }}
+      onClick={saveAllocation}
+      disabled={saving}
+    >
+      {saving ? "Saving..." : "Save Changes"}
+    </button>
+  )}
+</div>
+
+          </div>          
         </div>
-      )}
+      )}      
+      </div>
     </div>
   );
 }
 
-/* ================= STYLES ================= */
+
 const table = { width: "100%", borderCollapse: "collapse", fontSize: 14 };
 const thead = { background: "#1a5cff", color: "#fff" };
 const th = { padding: "14px 12px", textAlign: "left", fontWeight: 600 };
 const td = { padding: "14px 12px", borderBottom: "1px solid #eee" };
+
+const tableWrapper = {
+  width: "100%",
+  overflowX: "hidden",
+};
 
 const refreshBtn = {
   padding: "10px 16px",
@@ -558,4 +626,4 @@ const kpiValue = {
   fontSize: 28,
   fontWeight: 700,
   color: "#222",
-};
+}; 
