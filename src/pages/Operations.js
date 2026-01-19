@@ -1,5 +1,6 @@
 // Operations.js
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 
 const SCRIPT_URL =
@@ -10,6 +11,7 @@ const SLA_OPTIONS = ["4 Hours", "24 Hours", "48 Hours", "72 Hours"];
 const TAG_OPTIONS = ["Replacement", "Attendance", "Payment"];
 
 export default function Operations() {
+  const navigate = useNavigate();
   const userRole = localStorage.getItem("userRole");
   const userName = localStorage.getItem("Name");
 
@@ -19,7 +21,8 @@ export default function Operations() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [isViewOnly, setIsViewOnly] = useState(false);
   const [saving, setSaving] = useState(false);
-
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const [form, setForm] = useState({
     assignedTo: "",
@@ -44,9 +47,9 @@ const fetchTickets = async () => {
     if (result.status === "success") {
       let allTickets = (result.data || []).map((t) => ({
         ...t,
-        rawStatus: t.status, // keep original
+        rawStatus: t.status,
         status: normalizeStatus(t.status),
-
+        rawDate: t.rawDate || t.date, // ✅ ADD THIS LINE
       }));
 
       if (userRole === "Executive") {
@@ -58,6 +61,7 @@ const fetchTickets = async () => {
           );
         });
       }
+      
 
       allTickets.sort((a, b) => (b.id || 0) - (a.id || 0));
       setTickets(allTickets);
@@ -72,7 +76,6 @@ const fetchTickets = async () => {
   }
 };
 
-
   useEffect(() => {
     fetchTickets();
   }, [userRole, userName]);
@@ -82,7 +85,8 @@ const fetchTickets = async () => {
     setSelectedTicket(ticket);
 
     const isClosed = ticket.status?.trim() === "closed";
-    const viewOnly = userRole === "Executive" ? isClosed : isClosed;
+    const viewOnly =
+      userRole === "TCS" || isClosed;
 
     setIsViewOnly(viewOnly);
 
@@ -98,18 +102,43 @@ const fetchTickets = async () => {
 
     setShowForm(true);
   };
-const formatDate = (dateValue) => {
-  if (!dateValue) return "—"; 
+const formatDate = (value) => {
+  if (!value) return "—";
 
-  const date = new Date(dateValue);
-  if (isNaN(date)) return dateValue;
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return "—";
 
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = date.toLocaleString("en-GB", { month: "short" });
+  const year = date.getFullYear();
+
+  return `${day} ${month} ${year}`;
 };
+const formatFilterDate = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return "";
+
+  const day = date.getDate();
+  const month = date.toLocaleString("en-GB", { month: "short" });
+  const year = date.getFullYear();
+
+  return `${day} ${month} ${year}`;
+};
+const formatDDMMYYYY = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (isNaN(date)) return "";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
+
   /* ================= SAVE CHANGES ================= */
   const saveAllocation = async () => {
   if (!selectedTicket?.id) {
@@ -199,20 +228,146 @@ const inProgressTickets = tickets.filter(
       t.attachment?.trim())
 ).length;
 
+const filteredTickets = tickets.filter((t) => {
+  // Date filter applies to ALL roles (including TCS)
+  if (fromDate || toDate) {
+    const ticketDate = new Date(t.rawDate);
+    if (isNaN(ticketDate)) return false;
 
+    if (fromDate && ticketDate < new Date(fromDate)) return false;
+    if (toDate && ticketDate > new Date(toDate)) return false;
+  }
+
+  // Role-based visibility
+  if (userRole === "Executive") {
+    const assigned = t.allocatedTo?.trim();
+    return (
+      assigned &&
+      assigned.toLowerCase() === userName?.trim().toLowerCase()
+    );
+  }
+
+  // TCS & Admin see all (after date filter)
+  return true;
+});
 
   return (
     <div style={{ display: "flex" }}>
       <Sidebar />
 
-      <div style={{ marginLeft: 260, padding: 25, width: "100%" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2>Operations – Ticket Allocation</h2>
-          <button onClick={fetchTickets} style={refreshBtn}>
-            Refresh Tickets
-          </button>
-        </div>
-        <div style={{ display: "flex", gap: 20, marginBottom: 25 }}>
+              <div
+          style={{
+            marginLeft: 260,
+            padding: 25,
+            width: "calc(100vw - 260px)",
+            overflowX: "hidden",
+          }}
+        >
+
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 16,
+    flexWrap: "wrap",
+  }}
+>
+  <h2>
+    {userRole === "TCS"
+      ? "TCS – Support Tickets Status"
+      : "Operations – Ticket Allocation"}
+  </h2>
+
+  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+  <input
+    type="date"
+    value={fromDate}
+    onChange={(e) => setFromDate(e.target.value)}
+    style={textarea}
+  />
+  {fromDate && (
+    <div style={{ fontSize: 13, color: "#555" }}>
+      From Date: <strong>{formatDDMMYYYY(fromDate)}</strong>
+    </div>
+  )}
+</div>
+
+<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+  <input
+    type="date"
+    value={toDate}
+    onChange={(e) => setToDate(e.target.value)}
+    style={textarea}
+  />
+  {toDate && (
+    <div style={{ fontSize: 13, color: "#555" }}>
+      To Date: <strong>{formatDDMMYYYY(toDate)}</strong>
+    </div>
+  )}
+</div>
+
+
+    <button
+      style={btnGhost}
+      onClick={() => {
+        setFromDate("");
+        setToDate("");
+      }}
+    >
+      Clear
+    </button>
+
+    <button onClick={fetchTickets} style={refreshBtn}>
+      Refresh Tickets
+    </button>
+    {userRole === "TCS" && (
+    <button
+      style={supportBtn}
+      onClick={() => navigate("/support")}
+    >
+      Raise Ticket
+    </button>
+    )} 
+
+  </div>
+{userRole !== "TCS" && (fromDate || toDate) && (
+  <div
+    style={{
+      marginTop: 6,
+      fontSize: 14,
+      color: "#555",
+    }}
+  >
+    Showing tickets
+    {fromDate && (
+      <>
+        {" from "}
+        <strong>{formatFilterDate(fromDate)}</strong>
+      </>
+    )}
+    {toDate && (
+      <>
+        {" to "}
+        <strong>{formatFilterDate(toDate)}</strong>
+      </>
+    )}
+  </div>
+)}
+ 
+</div>
+
+        <div
+  style={{
+    display: "flex",
+    gap: 20,
+    marginBottom: 25,
+    flexWrap: "wrap",
+  }}
+>
+
   <div style={kpiCard}>
     <div style={kpiLabel}>Total Tickets</div>
     <div style={kpiValue}>{totalTickets}</div>
@@ -233,7 +388,6 @@ const inProgressTickets = tickets.filter(
     <div style={kpiValue}>{closedTickets}</div>
   </div>
 </div>
-
 
         {loading ? (
   <p>Loading tickets...</p>
@@ -259,13 +413,17 @@ const inProgressTickets = tickets.filter(
           <th style={th}>Date</th>
           <th style={th}>Priority</th>
           <th style={th}>Status</th>
-          <th style={th}>Assigned To</th>
-          <th style={th}>Executive Progress</th>
-          <th style={th}>Action</th>
+
+          {userRole !== "TCS" && <th style={th}>Assigned To</th>}
+          {userRole !== "TCS" && <th style={th}>Executive Status</th>}
+
+          {userRole !== "TCS" && <th style={th}>Action</th>}
+
         </tr>
       </thead>
       <tbody>
-        {tickets.map((t) => {
+        {filteredTickets.map((t) => {
+
           const execDone = t.resolution?.trim() && t.attachment?.trim();
 
           return (
@@ -283,38 +441,48 @@ const inProgressTickets = tickets.filter(
               <td style={td}>
                 <strong
                   style={{
-                    color: t.status === "closed" ? "#28a745" : "#ff6b00",
+                    color: t.status === "closed" ? "#28a745" : "#ff6b00", 
                     textTransform: "capitalize",
                   }}
                 >
                   {t.status}
                 </strong>
               </td>
-              <td style={td}>{t.allocatedTo || "—"}</td>
-              <td style={td}>
-                {execDone ? (
-                  <span style={{ color: "#28a745", fontWeight: "bold" }}>
-                    Completed
-                  </span>
-                ) : (
-                  <span style={{ color: "#dc3545" }}>Pending</span>
-                )}
-              </td>
-              <td style={td}>
-                {t.status === "closed" ? (
-                  <button style={viewBtn} onClick={() => openAllocate(t)}>
-                    View
-                  </button>
-                ) : (
-                  <button style={editBtn} onClick={() => openAllocate(t)}>
-                    {t.allocatedTo
+              {userRole !== "TCS" && (
+                <td style={td}>{t.allocatedTo || "—"}</td>
+              )}
+
+              {userRole !== "TCS" && (
+                <td style={td}>
+                  {execDone ? (
+                    <span style={{ color: "#28a745", fontWeight: "bold" }}>
+                      Completed
+                    </span>
+                  ) : (
+                    <span style={{ color: "#dc3545" }}>Pending</span>
+                  )}
+                </td>
+              )}
+
+              {/* ACTION COLUMN */}
+              {userRole !== "TCS" && (
+                <td style={td}>
+                  <button
+                    style={t.status === "closed" ? viewBtn : editBtn}
+                    onClick={() => openAllocate(t)}
+                  >
+                    {t.status === "closed"
+                      ? "View"
+                      : t.allocatedTo
                       ? execDone
                         ? "Review"
                         : "Update"
                       : "Allocate"}
                   </button>
-                )}
-              </td>
+                </td>
+              )}
+
+
             </tr>
           );
         })}
@@ -381,7 +549,6 @@ const inProgressTickets = tickets.filter(
                 )}
               </div>
             
-
               {/* SLA Timer */}
               <div style={field}>
                 <label style={labelStyle}>SLA Timer</label>
@@ -504,13 +671,22 @@ const inProgressTickets = tickets.filter(
 
 
 const table = { width: "100%", borderCollapse: "collapse", fontSize: 14 };
-const thead = { background: "#1a5cff", color: "#fff" };
+const thead = {
+  background: "#1a5cff",
+  color: "#fff",
+  position: "sticky",
+  top: 0,
+  zIndex: 10,
+};
+
 const th = { padding: "14px 12px", textAlign: "left", fontWeight: 600 };
 const td = { padding: "14px 12px", borderBottom: "1px solid #eee" };
 
 const tableWrapper = {
   width: "100%",
-  overflowX: "hidden",
+  maxHeight: "65vh",   // table scroll height
+  overflowX: "auto",
+  overflowY: "auto",
 };
 
 const refreshBtn = {
@@ -560,6 +736,15 @@ const modal = {
   borderRadius: 12,
   overflowY: "auto",
   boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
+}; 
+const supportBtn = {
+  padding: "10px 18px",
+  background: "#1a5cff",
+  color: "#fff",
+  border: "none",
+  borderRadius: 6,
+  cursor: "pointer",
+  fontWeight: 600,
 };
 
 const modalTitle = { fontSize: 24, fontWeight: 600, marginBottom: 24 };
@@ -614,7 +799,6 @@ const kpiCard = {
   boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
   borderLeft: "5px solid #6c757d",
 };
-
 const kpiLabel = {
   fontSize: 14,
   color: "#666",
@@ -626,4 +810,4 @@ const kpiValue = {
   fontSize: 28,
   fontWeight: 700,
   color: "#222",
-}; 
+};

@@ -1,77 +1,85 @@
-import './App.css';
-import { Routes, Route, Navigate } from "react-router-dom";
-import LoginPage from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Operations from './pages/Operations';
-import AdminDashboard from './pages/AdminDashboard';
-import Support from './pages/Support';
+import "./App.css";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+
+import LoginPage from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Operations from "./pages/Operations";
+import AdminDashboard from "./pages/AdminDashboard";
+import Support from "./pages/Support";
+
+import TopNavbar from "./components/TopNavbar";
+import Sidebar from "./components/Sidebar";
 
 function App() {
   const role = localStorage.getItem("userRole");
+  const location = useLocation();
+
+  const isLoginPage = location.pathname === "/login";
+  const navbarHeight = 64;
 
   return (
     <div className="flex">
-      {/* LEFT SIDEBAR */}
-      <div className="w-[260px] fixed h-full bg-[#1f2d3d] text-white">
-        
+      {/* SIDEBAR */}
+      {!isLoginPage && location.pathname !== "/support" && <Sidebar />}
 
-        <nav className="mt-4 space-y-3 px-4">
-          {/* USER DASHBOARD */}
-         
+      <div className="flex-1">
+        {/* TOP NAVBAR */}
+        {!isLoginPage && <TopNavbar />}
 
-          {/* ADMIN LINKS */}
-          {role !== "Admin" && (
-            <>
-              <a
-                href="/operations"
-                className="block bg-blue-600 px-4 py-2 rounded text-white"
-              >
-                Brisk Olive Operations Team
-              </a>
+        {/* MAIN CONTENT */}
+        <div
+          className="bg-gray-50 min-h-screen p-6"
+          style={{ paddingTop: isLoginPage ? 0 : navbarHeight }}
+        >
+          <Routes>
+            {/* LOGIN */}
+            <Route path="/login" element={<LoginPage />} />
 
-              <a
-                href="/admin-dashboard"
-                className="block bg-blue-600 px-4 py-2 rounded text-white"
-              >
-                Admin Dashboard
-              </a>
-            </>
-          )}
-        </nav>
-      </div>
+            {/* OPERATIONS (Executive + TCS view-only) */}
+            <Route
+              path="/operations"
+              element={
+                role ? <Operations /> : <Navigate to="/login" />
+              }
+            />
 
-      {/* MAIN CONTENT */}
-      <div className="ml-[260px] w-full min-h-screen bg-gray-50 p-6">
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/support" element={<Support />} />
+            {/* SUPPORT (ONLY TCS via button) */}
+            <Route
+              path="/support"
+              element={
+                role === "TCS" ? <Support /> : <Navigate to="/operations" />
+              }
+            />
 
-          {/* USER ROUTES */}
-          {role !== "Admin" && (
-            <>
-            <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/operations" element={<Operations />} />
-            </>
-          )}
+            {/* ADMIN */}
+            <Route
+              path="/admin-dashboard"
+              element={
+                role === "Admin"
+                  ? <AdminDashboard />
+                  : <Navigate to="/operations" />
+              }
+            />
 
-          {/* ADMIN ROUTES */}
-          {role === "Admin" && (
-            <>
-              <Route path="/operations" element={<Operations />} />
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            </>
-          )}
-
-          {/* DEFAULT REDIRECT */}
-          <Route
-            path="*"
-            element={
-              role
-                ? <Navigate to={role === "Admin" ? "/admin-dashboard" : "/dashboard"} />
-                : <Navigate to="/login" />
-            }
-          />
-        </Routes>
+            {/* DEFAULT REDIRECT */}
+            <Route
+              path="*"
+              element={
+                role ? (
+                  <Navigate
+                    to={
+                      role === "Admin"
+                        ? "/admin-dashboard"
+                        : "/operations"
+                    }
+                  />
+                ) : (
+                  <Navigate to="/login" />
+                )
+              }
+            />
+          </Routes>
+        </div>
       </div>
     </div>
   );

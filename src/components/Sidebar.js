@@ -20,8 +20,10 @@ const Sidebar = () => {
         <ul style={menuStyle}>
           {role !== "Admin" && (
             <>
-              <MenuItem to="/dashboard" label="Dashboard" />
-              <MenuItem to="/operations" label="Operations Team" />
+              <MenuItem
+                to="/operations"
+                label={role === "TCS" ? "TCS Dashboard" : "Operations Team"}
+              />
             </>
           )}
           {role === "Admin" && (
@@ -51,16 +53,17 @@ const MenuItem = ({ to, label }) => (
         gap: 12,
         padding: "12px 16px",
         borderRadius: 10,
-        color: isActive ? "#1a5cff" : "#cbd5e1",
+        color: isActive ? "#ffffff" : "#334155",
         textDecoration: "none",
-        background: isActive ? "rgba(26,92,255,0.15)" : "transparent",
+        background: isActive ? "#1a5cff" : "transparent",
         fontWeight: isActive ? 600 : 500,
         transition: "all .25s ease"
       })}
       onMouseEnter={e => {
-        if (!e.currentTarget.style.background.includes("rgba"))
-          e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+        if (!e.currentTarget.className.includes("active"))
+          e.currentTarget.style.background = "rgba(26,92,255,0.08)";
       }}
+
       onMouseLeave={e => {
         if (!e.currentTarget.className.includes("active"))
           e.currentTarget.style.background = "transparent";
@@ -80,23 +83,29 @@ const sidebarStyle = {
   top: 0,
   width: 240,
   height: "100vh",
-  background: "linear-gradient(180deg,#0f172a,#1e293b)",
-  color: "#fff",
+  background: "#ffffff",          // ✅ WHITE SIDEBAR
+  color: "#0f172a",
   padding: "22px 18px",
   boxSizing: "border-box",
   display: "flex",
   flexDirection: "column",
-  justifyContent: "space-between",
-  boxShadow: "4px 0 18px rgba(0,0,0,0.25)",
+  justifyContent: "flex-start",   // menu starts from top
+  boxShadow: "4px 0 18px rgba(0,0,0,0.08)",
   zIndex: 1000
 };
+
 
 const brandBox = {
   display: "flex",
   alignItems: "center",
   gap: 14,
-  marginBottom: 35
+  marginBottom: 35,
+  padding: "12px 14px",
+  background: "#1a5cff",      // 🔵 BLUE HEADER
+  borderRadius: 12,
+  color: "#ffffff"
 };
+
 
 const logoCircle = {
   width: 42,
@@ -112,13 +121,16 @@ const logoCircle = {
 
 const brandTitle = {
   fontSize: 16,
-  fontWeight: 600
+  fontWeight: 600,
+  color: "#ffffff"
 };
 
 const brandSub = {
   fontSize: 12,
-  color: "#94a3b8"
+  color: "#e0e7ff"
 };
+
+
 
 const menuStyle = {
   listStyle: "none",
@@ -133,10 +145,13 @@ const dotIcon = {
   background: "#1a5cff"
 };
 
+
 const footerStyle = {
+  marginTop: "auto",   // 🔥 PUSHES FOOTER TO BOTTOM
   paddingTop: 20,
-  borderTop: "1px solid rgba(255,255,255,0.08)",
+  borderTop: "1px solid rgba(0,0,0,0.08)",
   textAlign: "center"
 };
+
 
 export default Sidebar;

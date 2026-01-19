@@ -27,12 +27,23 @@ const Login = () => {
       const result = await res.json();
 
       if (result.status === "success") {
-        localStorage.setItem("user", JSON.stringify(result.user));
-        localStorage.setItem("userRole", result.user.role);
-        localStorage.setItem("Name", result.user.name);
+          localStorage.setItem("user", JSON.stringify(result.user));
+          localStorage.setItem("userRole", result.user.role);
+          localStorage.setItem("Name", result.user.name);
 
-        navigate("/admin-dashboard");
-      } else {
+          // Role-based navigation
+          if (result.user.role === "Executive") {
+              navigate("/operations"); // Executive → Operations page
+          }else if (result.user.role === "TCS") {
+              navigate("/tcs-dashboard");
+          } else if (result.user.role === "Admin") {
+              navigate("/admin-dashboard"); // Admin → Admin dashboard
+          } else {
+              navigate("/dashboard");  // fallback
+          }
+  }
+
+      else {
         alert(result.message);
       }
     } catch (err) {

@@ -162,6 +162,21 @@ export default function RaiseTicket() {
       alert("TC Code is required");
       return;
     }
+    // ✅ MANDATORY CATEGORY, SUB-CATEGORY, PRIORITY
+if (!form.category) {
+  alert("Category is required");
+  return;
+}
+
+if (!form.subCategory) {
+  alert("Sub-category is required");
+  return;
+}
+
+if (!form.priority) {
+  alert("Priority is required");
+  return;
+}
 
     try {
       setLoading(true);

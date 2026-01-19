@@ -6,7 +6,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 28px;
+
+  position: fixed;   /* ✅ ADD */
+  top: 0;             /* ✅ ADD */
+  left: 0;            /* ✅ ADD */
+  width: 100%;        /* ✅ ADD */
+  z-index: 1000;      /* ✅ ADD */
 }
+
 
 .nav-left img {
   height: 38px;
@@ -22,8 +29,9 @@
 .page {
   background: #f5f7fb;
   min-height: calc(100vh - 64px);
-  padding: 24px 16px;
+  padding: 88px 16px 24px;  /* ✅ CHANGE THIS LINE */
 }
+
 
 /* CARD */
 .card.vertical {
