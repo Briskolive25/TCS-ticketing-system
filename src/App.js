@@ -2,7 +2,6 @@ import "./App.css";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import LoginPage from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import Operations from "./pages/Operations";
 import AdminDashboard from "./pages/AdminDashboard";
 import Support from "./pages/Support";
