@@ -1,5 +1,5 @@
 // Operations.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback  } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 
@@ -38,7 +38,7 @@ export default function Operations() {
   const normalizeStatus = (status) =>
   status ? status.trim().toLowerCase() : "open";
 
-const fetchTickets = async () => {
+const fetchTickets = useCallback(async () => {
   setLoading(true);
   try {
     const res = await fetch(`${SCRIPT_URL}?action=getTickets`);
@@ -49,7 +49,7 @@ const fetchTickets = async () => {
         ...t,
         rawStatus: t.status,
         status: normalizeStatus(t.status),
-        rawDate: t.rawDate || t.date, // ✅ ADD THIS LINE
+        rawDate: t.rawDate || t.date,
       }));
 
       if (userRole === "Executive") {
@@ -61,24 +61,22 @@ const fetchTickets = async () => {
           );
         });
       }
-      
 
       allTickets.sort((a, b) => (b.id || 0) - (a.id || 0));
       setTickets(allTickets);
-    } else {
-      alert("Error loading tickets");
     }
   } catch (err) {
     console.error(err);
-    alert("Failed to load tickets");
   } finally {
     setLoading(false);
   }
-};
+}, [userRole, userName]); // ✅ REQUIRED
 
-  useEffect(() => {
-    fetchTickets();
-  }, [userRole, userName]);
+
+ useEffect(() => {
+  fetchTickets();
+}, [fetchTickets]); // ✅ DO NOT change this
+
 
   /* ================= OPEN MODAL ================= */
   const openAllocate = (ticket) => {
