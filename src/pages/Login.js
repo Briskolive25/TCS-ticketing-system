@@ -33,12 +33,14 @@ const Login = () => {
 
           // Role-based navigation
           if (result.user.role === "Executive") {
-              navigate("/operations"); // Executive → Operations page
-          }else if (result.user.role === "TCS") {
-              navigate("/tcs-dashboard");
-          } else if (result.user.role === "Admin") {
-              navigate("/admin-dashboard"); // Admin → Admin dashboard
-          } else {
+          navigate("/operations");
+        } else if (result.user.role === "TCS") {
+          navigate("/operations");   // TCS uses Operations (view mode)
+        } else if (result.user.role === "Admin") {
+          navigate("/operations");   // ✅ Admin FIRST lands on Operations
+        }
+
+      else {
               navigate("/dashboard");  // fallback
           }
   }
