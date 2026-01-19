@@ -33,6 +33,7 @@ function App() {
           <Routes>
             {/* LOGIN */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/support" element={<Support />} />
 
             {/* OPERATIONS (Executive + TCS view-only) */}
             <Route
@@ -43,13 +44,7 @@ function App() {
             />
 
             {/* SUPPORT (ONLY TCS via button) */}
-            <Route
-              path="/support"
-              element={
-                role === "TCS" ? <Support /> : <Navigate to="/operations" />
-              }
-            />
-
+          
             {/* ADMIN */}
             <Route
               path="/admin-dashboard"
