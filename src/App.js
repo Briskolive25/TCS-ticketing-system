@@ -2,9 +2,11 @@ import "./App.css";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 import LoginPage from "./pages/Login";
+import ManpowerLogin from "./pages/ManpowerLogin"; // ✅ ADD
 import Operations from "./pages/Operations";
 import AdminDashboard from "./pages/AdminDashboard";
 import Support from "./pages/Support";
+import Landing from "./pages/Landing";
 
 import TopNavbar from "./components/TopNavbar";
 import Sidebar from "./components/Sidebar";
@@ -14,28 +16,47 @@ function App() {
   const location = useLocation();
 
   const isLoginPage = location.pathname === "/login";
+  const isManpowerLogin = location.pathname === "/manpower-login"; // ✅ ADD
+  const isSupportPage = location.pathname === "/support";
+  const isLanding = location.pathname === "/landing";
+
   const navbarHeight = 64;
 
   return (
     <div className="flex">
       {/* SIDEBAR */}
-      {!isLoginPage && location.pathname !== "/support" && <Sidebar />}
+      {!isLoginPage &&
+        !isManpowerLogin &&
+        !isSupportPage &&
+        !isLanding && <Sidebar />}
 
       <div className="flex-1">
         {/* TOP NAVBAR */}
-        {!isLoginPage && <TopNavbar />}
+        {!isLoginPage && !isManpowerLogin && !isLanding && (
+          <TopNavbar />
+        )}
 
         {/* MAIN CONTENT */}
         <div
-          className="bg-gray-50 min-h-screen p-6"
-          style={{ paddingTop: isLoginPage ? 0 : navbarHeight }}
+          className="bg-gray-50 min-h-screen"
+          style={{
+            paddingTop:
+              isLoginPage || isManpowerLogin || isLanding
+                ? 0
+                : navbarHeight,
+          }}
         >
           <Routes>
-            {/* LOGIN */}
+            {/* ================= PUBLIC PAGES ================= */}
             <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/manpower-login"
+              element={<ManpowerLogin />}
+            />
             <Route path="/support" element={<Support />} />
+            <Route path="/landing" element={<Landing />} />
 
-            {/* OPERATIONS (Executive + TCS view-only) */}
+            {/* ================= OPERATIONS ================= */}
             <Route
               path="/operations"
               element={
@@ -43,19 +64,19 @@ function App() {
               }
             />
 
-            {/* SUPPORT (ONLY TCS via button) */}
-          
-            {/* ADMIN */}
+            {/* ================= ADMIN ================= */}
             <Route
               path="/admin-dashboard"
               element={
-                role === "Admin"
-                  ? <AdminDashboard />
-                  : <Navigate to="/operations" />
+                role === "Admin" ? (
+                  <AdminDashboard />
+                ) : (
+                  <Navigate to="/operations" />
+                )
               }
             />
 
-            {/* DEFAULT REDIRECT */}
+            {/* ================= DEFAULT ================= */}
             <Route
               path="*"
               element={

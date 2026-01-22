@@ -7,7 +7,7 @@ const API_URL =
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);   
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -15,7 +15,7 @@ const Login = () => {
       alert("Please enter email and password");
       return;
     }
-
+ 
     setLoading(true);
 
     try {
@@ -28,7 +28,7 @@ const Login = () => {
 
       if (result.status === "success") {
           localStorage.setItem("user", JSON.stringify(result.user));
-          localStorage.setItem("userRole", result.user.role);
+          localStorage.setItem("userRole", result.user.role); 
           localStorage.setItem("Name", result.user.name);
 
           // Role-based navigation
@@ -39,12 +39,10 @@ const Login = () => {
         } else if (result.user.role === "Admin") {
           navigate("/operations");   // ✅ Admin FIRST lands on Operations
         }
-
       else {
               navigate("/dashboard");  // fallback
           }
   }
-
       else {
         alert(result.message);
       }
@@ -58,7 +56,7 @@ const Login = () => {
   return (
     <div style={page}>
       <div style={card}>
-        <h1 style={brand}>TCS Ticketing</h1>
+        <h1 style={brand}>Welcome to Brisk Olive Help Desk For TCS</h1>
         <p style={subtitle}>Support & Issue Management Portal</p>
 
         <input
@@ -76,6 +74,13 @@ const Login = () => {
           onChange={(e) => setPassword(e.target.value)}
           style={input}
         />
+
+        <p style={helpText}>
+          Need help? Contact Support at{" "}
+          <a href="mailto:info@briskolive.com" style={helpLink}>
+            info@briskolive.com
+          </a>
+        </p>
 
         <button style={loginBtn} onClick={handleLogin} disabled={loading}>
           {loading ? "Signing in..." : "Login"}
@@ -134,6 +139,16 @@ const loginBtn = {
   color: "#fff",
   fontWeight: 600,
   cursor: "pointer",
+};
+const helpText = {
+  fontSize: 13,
+  color: "#555",
+  marginBottom: 18,
+};
+const helpLink = {
+  color: "#1a5cff",
+  fontWeight: 600,
+  textDecoration: "none",
 };
 
 export default Login;

@@ -23,7 +23,7 @@ export default function Operations() {
   const [saving, setSaving] = useState(false);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-
+  
   const [form, setForm] = useState({
     assignedTo: "",
     status: "",
@@ -72,11 +72,9 @@ const fetchTickets = useCallback(async () => {
   }
 }, [userRole, userName]); // ✅ REQUIRED
 
-
  useEffect(() => {
   fetchTickets();
 }, [fetchTickets]); // ✅ DO NOT change this
-
 
   /* ================= OPEN MODAL ================= */
   const openAllocate = (ticket) => {
@@ -206,7 +204,6 @@ const formatDDMMYYYY = (value) => {
   }
 };
 
-
     /* ================= KPI COUNTS ================= */
   const totalTickets = tickets.length;
 
@@ -278,35 +275,64 @@ const filteredTickets = tickets.filter((t) => {
       : "Operations – Ticket Allocation"}
   </h2>
 
-  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+  <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+    <div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    width: 180,            // 🔥 FIX 1: fixed column width
+  }}
+>
   <input
     type="date"
     value={fromDate}
     onChange={(e) => setFromDate(e.target.value)}
-    style={textarea}
+    style={{ ...textarea, width: "100%" }}   // 🔥 FIX 2
   />
+
   {fromDate && (
-    <div style={{ fontSize: 13, color: "#555" }}>
+    <div
+      style={{
+        fontSize: 13,
+        color: "#555",
+        width: "100%",      // 🔥 FIX 3
+        display: "block",   // 🔥 FIX 4 (forces BELOW)
+      }}
+    >
       From Date: <strong>{formatDDMMYYYY(fromDate)}</strong>
     </div>
   )}
 </div>
 
-<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+<div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    width: 180,
+  }}
+>
   <input
     type="date"
     value={toDate}
     onChange={(e) => setToDate(e.target.value)}
-    style={textarea}
+    style={{ ...textarea, width: "100%" }}
   />
+
   {toDate && (
-    <div style={{ fontSize: 13, color: "#555" }}>
+    <div
+      style={{
+        fontSize: 13,
+        color: "#555",
+        width: "100%",
+        display: "block",
+      }}
+    >
       To Date: <strong>{formatDDMMYYYY(toDate)}</strong>
     </div>
   )}
 </div>
-
 
     <button
       style={btnGhost}
@@ -331,33 +357,10 @@ const filteredTickets = tickets.filter((t) => {
     )} 
 
   </div>
-{userRole !== "TCS" && (fromDate || toDate) && (
-  <div
-    style={{
-      marginTop: 6,
-      fontSize: 14,
-      color: "#555",
-    }}
-  >
-    Showing tickets
-    {fromDate && (
-      <>
-        {" from "}
-        <strong>{formatFilterDate(fromDate)}</strong>
-      </>
-    )}
-    {toDate && (
-      <>
-        {" to "}
-        <strong>{formatFilterDate(toDate)}</strong>
-      </>
-    )}
-  </div>
-)}
  
 </div>
 
-        <div
+  <div
   style={{
     display: "flex",
     gap: 20,
@@ -667,7 +670,6 @@ const filteredTickets = tickets.filter((t) => {
   );
 }
 
-
 const table = { width: "100%", borderCollapse: "collapse", fontSize: 14 };
 const thead = {
   background: "#1a5cff",
@@ -803,7 +805,6 @@ const kpiLabel = {
   marginBottom: 8,
   fontWeight: 500,
 };
-
 const kpiValue = {
   fontSize: 28,
   fontWeight: 700,
