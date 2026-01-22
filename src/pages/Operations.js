@@ -110,18 +110,7 @@ const formatDate = (value) => {
 
   return `${day} ${month} ${year}`;
 };
-const formatFilterDate = (value) => {
-  if (!value) return "";
 
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return "";
-
-  const day = date.getDate();
-  const month = date.toLocaleString("en-GB", { month: "short" });
-  const year = date.getFullYear();
-
-  return `${day} ${month} ${year}`;
-};
 const formatDDMMYYYY = (value) => {
   if (!value) return "";
 
