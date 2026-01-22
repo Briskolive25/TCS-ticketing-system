@@ -82,32 +82,25 @@ export default function ManpowerLogin() {
           <div style={divider}></div>
 
           {/* Coordinator Login Toggle */}
-          {!isCoordinator ? (
-            <>
-              <p style={coordinatorText}>Are you a coordinator?</p>
-              <a
-                href="#"
-                style={coordinatorLink}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsCoordinator(true);
-                }}
-              >
-                Coordinator Login →
-              </a>
-            </>
-          ) : (
-            <a
-              href="#"
-              style={coordinatorLink}
-              onClick={(e) => {
-                e.preventDefault();
-                setIsCoordinator(false);
-              }}
-            >
-              ← Back to Brisk Olive Login
-            </a>
-          )}
+{!isCoordinator ? (
+  <>
+    <p style={coordinatorText}>Are you a coordinator?</p>
+    <button
+      style={coordinatorLink}
+      onClick={() => setIsCoordinator(true)}
+    >
+      Coordinator Login →
+    </button>
+  </>
+) : (
+  <button
+    style={coordinatorLink}
+    onClick={() => setIsCoordinator(false)}
+  >
+    ← Back to Brisk Olive Login
+  </button>
+)}
+
         </div>
       </div>
     </div>
