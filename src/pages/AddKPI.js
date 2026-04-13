@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 
 export default function AddKPI() {
   const [showForm, setShowForm] = useState(false);
@@ -11,7 +11,6 @@ export default function AddKPI() {
     department: "",
     dateFrom: "",
     dateTo: "",
-    employee: "",
   });
   const today = new Date().toISOString().slice(0, 10);
   const SHEET_ID = "13eeOg2QaKERDUb9ZYEK7rRz5V9xwiSFCjPZ1yBW8NxQ";
@@ -88,7 +87,6 @@ export default function AddKPI() {
   });
   const [roleNameMap, setRoleNameMap] = useState({});
   const [allAssignableNames, setAllAssignableNames] = useState([]);
-  const [nameDesignationMap, setNameDesignationMap] = useState({});
   const [assignedOverrides, setAssignedOverrides] = useState({});
   const [cleaningStatusToday, setCleaningStatusToday] = useState("");
   const [boardMeetingMeta, setBoardMeetingMeta] = useState({
@@ -146,12 +144,12 @@ export default function AddKPI() {
   };
 
   const clearFilters = () => {
-    setFilters({ search: "", department: "", dateFrom: "", dateTo: "", employee: "" });
+    setFilters({ search: "", department: "", dateFrom: "", dateTo: "" });
   };
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.search, filters.department, filters.dateFrom, filters.dateTo, filters.employee, rowsPerPage]);
+  }, [filters.search, filters.department, filters.dateFrom, filters.dateTo, rowsPerPage]);
 
   const normalize = (value) =>
     (value || "").toString().toLowerCase().replace(/\s+/g, " ").trim();
@@ -202,7 +200,7 @@ export default function AddKPI() {
     return (row[index] || "").toString().trim();
   };
 
-  // ── checks if ANY cell in the row contains "joined" ──────────────────────
+  // -- checks if ANY cell in the row contains "joined" ----------------------
   // This is more reliable than checking only col 29 in case column positions shift
   const isJoinedRow = (row) => {
     if (!row) return false;
@@ -211,7 +209,7 @@ export default function AddKPI() {
     );
   };
 
-  // ── also keep original for targeted col check ─────────────────────────────
+  // -- also keep original for targeted col check -----------------------------
   const isJoined = (value) => normalize(value).includes("joined");
 
   const normalizeDateKey = (value) => {
@@ -297,7 +295,7 @@ export default function AddKPI() {
     return Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
   };
 
-  // ── Extract joining date from hiring history text ─────────────────────────
+  // -- Extract joining date from hiring history text -------------------------
   // Handles formats like:
   // "Mar 18 2026 - New Hiring Initiated; Mar 25 2026 - Joined"
   // "18 Mar 2026 - Joined"
@@ -471,7 +469,7 @@ export default function AddKPI() {
     return rows;
   };
 
-  // ── ROLE -> NAME MAP (Onboarding sheet) ──
+  // -- ROLE -> NAME MAP (Onboarding sheet) --
   useEffect(() => {
     let isActive = true;
     const loadRoleNames = async () => {
@@ -484,13 +482,12 @@ export default function AddKPI() {
         const map = new Map();
         const allNames = [];
         const allNameKeys = new Set();
-        const nameDesignation = new Map();
 
         dataRows.forEach((row) => {
           const name = (row[0] || "").toString().trim();
           const role = (row[6] || "").toString().trim();
           const status = (row[12] || "").toString().trim();
-          if (!name) return;
+          if (!name || !role) return;
           if (status.toLowerCase().includes("left")) return;
 
           const roleKey = normalize(role);
@@ -500,12 +497,6 @@ export default function AddKPI() {
             allNameKeys.add(nameKey);
             allNames.push(name);
           }
-
-          if (role && !nameDesignation.has(nameKey)) {
-            nameDesignation.set(nameKey, role);
-          }
-
-          if (!role) return;
 
           const existing = map.get(roleKey) || [];
           if (!existing.includes(name)) {
@@ -520,11 +511,6 @@ export default function AddKPI() {
           });
           setRoleNameMap(obj);
           setAllAssignableNames(allNames);
-          const designationObj = {};
-          nameDesignation.forEach((value, key) => {
-            designationObj[key] = value;
-          });
-          setNameDesignationMap(designationObj);
         }
       } catch {
         // Silent fail
@@ -534,7 +520,7 @@ export default function AddKPI() {
     return () => { isActive = false; };
   }, []);
 
-  // ── KPI MASTER SHEET ───────────────────────────────────────────────────────
+  // -- KPI MASTER SHEET -------------------------------------------------------
   useEffect(() => {
     let isActive = true;
     const loadSheet = async () => {
@@ -609,7 +595,7 @@ export default function AddKPI() {
     return () => { isActive = false; };
   }, [SHEET_URL]);
 
-  // ── ONBOARDING SHEET ───────────────────────────────────────────────────────
+  // -- ONBOARDING SHEET -------------------------------------------------------
   useEffect(() => {
     let isActive = true;
     const loadOnboardingSum = async () => {
@@ -732,7 +718,7 @@ export default function AddKPI() {
     return () => { isActive = false; };
   }, []);
 
-  // ── HIRING SHEET ───────────────────────────────────────────────────────────
+  // -- HIRING SHEET -----------------------------------------------------------
   useEffect(() => {
     let isActive = true;
     const loadHiringSheet = async () => {
@@ -762,7 +748,7 @@ export default function AddKPI() {
           row.some((cell) => (cell || "").toString().trim() !== "")
         );
 
-        // ── DEBUG: log first 3 rows of col AD to verify format ─────────────
+        // -- DEBUG: log first 3 rows of col AD to verify format -------------
         // Remove this block after confirming the score is correct
         console.log("=== HIRING SHEET DEBUG ===");
         console.log("Total rows:", dataRows.length);
@@ -772,7 +758,7 @@ export default function AddKPI() {
         });
         console.log("Rows containing 'joined':", dataRows.filter((r) => isJoined(getCsvCell(r, 29))).length);
 
-        // ── DATE WINDOW based on hiringPeriod ──────────────────────────────
+        // -- DATE WINDOW based on hiringPeriod ------------------------------
         const now = new Date();
         let windowStart, windowEnd;
 
@@ -787,7 +773,7 @@ export default function AddKPI() {
           windowStart = new Date(now.getFullYear(), 0, 1);
           windowEnd = now;
         } else {
-          // weekly � Mon to Sun
+          // weekly ? Mon to Sun
           const day = now.getDay() === 0 ? 7 : now.getDay();
           windowStart = new Date(now);
           windowStart.setDate(now.getDate() - (day - 1));
@@ -797,13 +783,13 @@ export default function AddKPI() {
           windowEnd.setHours(23, 59, 59, 999);
         }
 
-        console.log(`Period: ${hiringPeriod} | Window: ${windowStart.toDateString()} → ${windowEnd.toDateString()}`);
+        console.log(`Period: ${hiringPeriod} | Window: ${windowStart.toDateString()} ? ${windowEnd.toDateString()}`);
 
-        // ── Col indexes ────────────────────────────────────────────────────
-        // Col B  = index 1  → Request Date (process start)
-        // Col I  = index 8  → Joining Days ("20 days = joining at 0 days notice...")
-        // Col O  = index 14 → Planned Joining Date (deadline)
-        // Col AD = index 29 → Hiring History (contains "Joined" status)
+        // -- Col indexes ----------------------------------------------------
+        // Col B  = index 1  ? Request Date (process start)
+        // Col I  = index 8  ? Joining Days ("20 days = joining at 0 days notice...")
+        // Col O  = index 14 ? Planned Joining Date (deadline)
+        // Col AD = index 29 ? Hiring History (contains "Joined" status)
 
         const fresherScores = [];
         const experiencedScores = [];
@@ -832,13 +818,13 @@ export default function AddKPI() {
 
           // Filter: only include if joining date is inside the selected window
           if (actualJoinDate < windowStart || actualJoinDate > windowEnd) {
-            console.log(`Row ${rowIndex + 2}: Joined on ${actualJoinDate.toDateString()} — outside window, skipping`);
+            console.log(`Row ${rowIndex + 2}: Joined on ${actualJoinDate.toDateString()} � outside window, skipping`);
             return;
           }
 
-          const requestDateRaw = getCsvCell(row, 1);  // Col B — start date
-          const joiningDaysRaw = getCsvCell(row, 8);  // Col I — fresher/experienced + target days
-          const plannedJoinRaw = getCsvCell(row, 14); // Col O — planned joining
+          const requestDateRaw = getCsvCell(row, 1);  // Col B � start date
+          const joiningDaysRaw = getCsvCell(row, 8);  // Col I � fresher/experienced + target days
+          const plannedJoinRaw = getCsvCell(row, 14); // Col O � planned joining
 
           const joinInfo = normalize(joiningDaysRaw);
           const isFresher = joinInfo.includes("fresher") || joinInfo.includes("new");
@@ -851,8 +837,8 @@ export default function AddKPI() {
           const requestDate = parseTextDate(requestDateRaw);
           const plannedJoinDate = parseTextDate(plannedJoinRaw);
 
-          // Extract target days from Col I — first number in the text
-          // e.g. "20 days = joining at 0 days notice = 8,8,4,0" → 20
+          // Extract target days from Col I � first number in the text
+          // e.g. "20 days = joining at 0 days notice = 8,8,4,0" ? 20
           const targetMatch = joiningDaysRaw.toString().match(/^(\d+)/);
           const targetDays = targetMatch ? parseInt(targetMatch[1]) : 20;
 
@@ -954,7 +940,7 @@ export default function AddKPI() {
     return () => { isActive = false; };
   }, [HIRING_SHEET_CSV_URL, hiringPeriod]);
 
-  // ── RENEWALS SHEET ─────────────────────────────────────────────────────────
+  // -- RENEWALS SHEET ---------------------------------------------------------
   useEffect(() => {
     let isActive = true;
     const loadRenewals = async () => {
@@ -1056,7 +1042,7 @@ export default function AddKPI() {
     return () => { isActive = false; };
   }, [RENEWALS_MASTER_CSV_URL, RENEWALS_LOG_CSV_URL]);
 
-  // ── CLEANING SHEET ─────────────────────────────────────────────────────────
+  // -- CLEANING SHEET ---------------------------------------------------------
   useEffect(() => {
     let isActive = true;
     const loadCleaningStatus = async () => {
@@ -1090,7 +1076,7 @@ export default function AddKPI() {
     return () => { isActive = false; };
   }, [CLEANING_SHEET_CSV_URL]);
 
-  // ── BOARD MEETING SHEET ────────────────────────────────────────────────────
+  // -- BOARD MEETING SHEET ----------------------------------------------------
   useEffect(() => {
     let isActive = true;
     const loadBoardMeetingStatus = async () => {
@@ -1139,27 +1125,17 @@ export default function AddKPI() {
   }, [BOARD_MEETING_SHEET_CSV_URL]);
 
   const rowsToRender = sheetRows.length ? sheetRows : [];
-  const filteredRows = rowsToRender.filter((row, idx) => {
+  const filteredRows = rowsToRender.filter((row) => {
     const kpiName = getField(row, "KPI", "kpi");
     const department = getField(row, "Department", "department");
     const createdDate = getField(row, "Created Date", "createdDate");
     const startDate = getField(row, "Start Date (if any)", "startDate");
-    const roleValue = getField(row, ["KPI Role", "Role"], "role");
-    const roleNames = roleNameMap[normalize(roleValue)] || [];
-    const rowKey = getField(row, "KPI ID", "kpiId") || kpiName || `row-${idx}`;
-    const assignedToValue = assignedOverrides[rowKey] ?? (roleNames[0] || "-");
-    const assignedDesignation = nameDesignationMap[normalize(assignedToValue)];
-    const assignedToLabel = assignedDesignation ? `${assignedToValue} - ${assignedDesignation}` : assignedToValue;
     const matchesSearch = filters.search
       ? normalize(kpiName).includes(normalize(filters.search))
       : true;
     const matchesDepartment =
       filters.department && filters.department !== "All Departments"
         ? normalize(department) === normalize(filters.department)
-        : true;
-    const matchesEmployee =
-      filters.employee && filters.employee !== "All Employees"
-        ? normalize(assignedToLabel) === normalize(filters.employee)
         : true;
     const fromKey = normalizeDateKey(filters.dateFrom);
     const toKey = normalizeDateKey(filters.dateTo);
@@ -1173,7 +1149,7 @@ export default function AddKPI() {
           return key <= toKey;
         })
       : true;
-    return matchesSearch && matchesDepartment && matchesEmployee && matchesDate;
+    return matchesSearch && matchesDepartment && matchesDate;
   });
 
   const totalRows = filteredRows.length;
@@ -1194,17 +1170,6 @@ export default function AddKPI() {
     )
   ).sort((a, b) => a.localeCompare(b));
 
-  const employeeOptions = Array.from(
-    new Set(
-      (allAssignableNames || [])
-        .filter((value) => value)
-        .map((name) => {
-          const designation = nameDesignationMap[normalize(name)] || "";
-          return designation ? `${name} - ${designation}` : name;
-        })
-    )
-  ).sort((a, b) => a.toString().localeCompare(b.toString()));
-
   const getRowScoreValue = (row) => {
     const kpiName = getField(row, "KPI", "kpi");
     const isHiringKpi = normalize(kpiName) === normalize(HIRING_KPI_NAME);
@@ -1215,7 +1180,7 @@ export default function AddKPI() {
     const baseScore = getField(row, "Score", "score");
     if (isHiringKpi) {
       if (hiringMeta.loading) return "Loading...";
-      // ── FIX: return "-" instead of baseScore when no hires found ──────────
+      // -- FIX: return "-" instead of baseScore when no hires found ----------
       return hiringMeta.cumulativeScore !== null ? formatScore(hiringMeta.cumulativeScore) : "-";
     }
     if (isHiringExperiencedKpi) {
@@ -1356,17 +1321,6 @@ export default function AddKPI() {
                 ))}
               </select>
               <select
-                style={filterInput}
-                name="employee"
-                value={filters.employee}
-                onChange={handleFilterChange}
-              >
-                <option>All Employees</option>
-                {employeeOptions.map((name) => (
-                  <option key={`employee-${name}`} value={name}>{name}</option>
-                ))}
-              </select>
-              <select
                 style={{ ...filterInput, flex: "0 0 160px", maxWidth: 180 }}
                 value={hiringPeriod}
                 onChange={(e) => setHiringPeriod(e.target.value)}
@@ -1397,12 +1351,11 @@ export default function AddKPI() {
                 <tbody>
                   {paginatedRows.map((row, idx) => {
                     const kpiName = getField(row, "KPI", "kpi");
-                    const rowKey = getField(row, "KPI ID", "kpiId") || kpiName || `row-${idx}`;
-                    const roleValue = getField(row, ["KPI Role", "Role"], "role");
-                    const roleNames = roleNameMap[normalize(roleValue)] || [];
-                    const assignedToValue = assignedOverrides[rowKey] ?? (roleNames[0] || "-");
-    const assignedDesignation = nameDesignationMap[normalize(assignedToValue)];
-    const assignedToLabel = assignedDesignation ? `${assignedToValue} - ${assignedDesignation}` : assignedToValue;
+                                       const rowKey = getField(row, "KPI ID", "kpiId") || kpiName || `row-${idx}`
+                                                       const roleValue = getField(row, ["KPI Role", "Role"], "role");
+                                                                         const roleNames = roleNameMap[normalize(roleValue)] || [];
+                                                                                         const assignedToValue = assignedOverrides[rowKey] ?? (roleNames[0] || "-");
+                    const assignedTo = roleNameMap[normalize(roleValue)] || "-";
                     const isHiringKpi = normalize(kpiName) === normalize(HIRING_KPI_NAME);
                     const isHiringExperiencedKpi = normalize(kpiName) === normalize(HIRING_EXPERIENCED_KPI_NAME);
                     const isRenewalsKpi = normalize(kpiName) === normalize("Renewals & Warranties on time");
@@ -1421,7 +1374,7 @@ export default function AddKPI() {
                         ? "Loading..."
                         : hiringMetaForRow.cumulativeScore !== null
                         ? formatScore(hiringMetaForRow.cumulativeScore)
-                        : "-"  // ── FIX: show "-" not wrong base score
+                        : "-"  // -- FIX: show "-" not wrong base score
                       : isRenewalsKpi
                       ? renewalsMeta.loading
                         ? "Loading..."
@@ -1730,16 +1683,6 @@ const readOnlyInput = { padding: "12px 12px", borderRadius: 10, border: "1px sol
 const formActions = { display: "flex", justifyContent: "flex-end", gap: 10 };
 const primaryBtn = { background: "linear-gradient(120deg, #2563eb, #1d4ed8)", color: "#ffffff", border: "none", padding: "10px 18px", borderRadius: 10, cursor: "pointer", fontWeight: 600, boxShadow: "0 10px 18px rgba(37, 99, 235, 0.25)" };
 const ghostBtn = { background: "#ffffff", color: "#1e293b", border: "1px solid #e2e8f0", padding: "10px 18px", borderRadius: 10, cursor: "pointer", fontWeight: 600 };
-
-
-
-
-
-
-
-
-
-
 
 
 
