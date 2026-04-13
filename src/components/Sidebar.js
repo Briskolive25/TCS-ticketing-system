@@ -1,37 +1,46 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
   const role = localStorage.getItem("userRole");
+  const location = useLocation();
+  const path = location.pathname.toLowerCase();
+  const isScoringPage = path.startsWith("/scoring");
+  const isAddKpiPage = path.includes("/scoring/kpi");
+  const sidebarBg = "#ffffff";
+  const sidebarTextColor = "#0f172a";
+  const themeColor = "#1a5cff";
+  const menuTextColor = "#334155";
+  const menuActiveBg = "#1a5cff";
+  const menuHoverBg = "rgba(26,92,255,0.08)";
+  const dotColor = "#1a5cff";
+  const brandBg = "#1a5cff";
+  const brandSubColor = "#e0e7ff";
 
   return (
-    <aside style={sidebarStyle}>
+    <aside style={{ ...sidebarStyle, background: sidebarBg, color: sidebarTextColor }}>
       {/* BRAND */}
-      <div style={brandBox}>
+      <div style={{ ...brandBox, background: brandBg }}>
         <div style={logoCircle}>BO</div>
         <div>
-          <div style={brandTitle}>Brisk Olive</div>
-          <div style={brandSub}>Ticketing System</div>
+          <div style={{ ...brandTitle, color: "#ffffff" }}>Brisk Olive</div>
+          <div style={{ ...brandSub, color: brandSubColor }}>Scoring System</div>
         </div>
       </div>
 
       {/* MENU */}
       <nav>
         <ul style={menuStyle}>
-          {role !== "Admin" && (
-            <>
-              <MenuItem
-                to="/operations"
-                label={role === "TCS" ? "TCS Dashboard" : "Operations Team"}
-              />
-            </>
-          )}
-          {role === "Admin" && (
-            <>
-              <MenuItem to="/operations" label="Operations Team" />
-              <MenuItem to="/admin-dashboard" label="Admin Dashboard" />
-            </>
-          )}
+          <MenuItem
+            to="/scoring/kpi"
+            label="KPI"
+            theme={{ menuTextColor, menuActiveBg, menuHoverBg, dotColor }}
+          />
+          <MenuItem
+            to="/scoring/targets"
+            label="Targets"
+            theme={{ menuTextColor, menuActiveBg, menuHoverBg, dotColor }}
+          />
         </ul>
       </nav>
 
@@ -43,7 +52,7 @@ const Sidebar = () => {
   );
 };
 
-const MenuItem = ({ to, label }) => (
+const MenuItem = ({ to, label, theme }) => (
   <li style={{ marginBottom: 6 }}>
     <NavLink
       to={to}
@@ -53,23 +62,22 @@ const MenuItem = ({ to, label }) => (
         gap: 12,
         padding: "12px 16px",
         borderRadius: 10,
-        color: isActive ? "#ffffff" : "#334155",
+        color: isActive ? "#ffffff" : theme.menuTextColor,
         textDecoration: "none",
-        background: isActive ? "#1a5cff" : "transparent",
+        background: isActive ? theme.menuActiveBg : "transparent",
         fontWeight: isActive ? 600 : 500,
         transition: "all .25s ease"
       })}
-      onMouseEnter={e => {
+      onMouseEnter={(e) => {
         if (!e.currentTarget.className.includes("active"))
-          e.currentTarget.style.background = "rgba(26,92,255,0.08)";
+          e.currentTarget.style.background = theme.menuHoverBg;
       }}
-
-      onMouseLeave={e => {
+      onMouseLeave={(e) => {
         if (!e.currentTarget.className.includes("active"))
           e.currentTarget.style.background = "transparent";
       }}
     >
-      <span style={dotIcon} />
+      <span style={{ ...dotIcon, background: theme.dotColor }} />
       {label}
     </NavLink>
   </li>
@@ -153,5 +161,11 @@ const footerStyle = {
   textAlign: "center"
 };
 
-
 export default Sidebar;
+
+
+
+
+
+
+

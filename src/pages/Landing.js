@@ -1,25 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import logo from "../components/logo.png";
 import {
-  User,
-  Mail,
-  Building2,
-  BadgeCheck,
-  LogOut,
+  LayoutDashboard,
+  Bell,
+  Settings,
   TrendingUp,
   Users,
   UserPlus,
   Briefcase,
   Target,
   ClipboardList,
-  Settings,
   DollarSign,
   LineChart,
   Code2,
   Wrench,
+  Building2,
+  BadgeCheck,
+  LogOut,
 } from "lucide-react";
 
 export default function Landing() {
+  const [activeModule, setActiveModule] = useState("");
+  const [showUser, setShowUser] = useState(false);
+
   const user = {
     name: "Tanisha Sharma",
     email: "dataanalytics.manager@briskolive.com",
@@ -27,257 +30,240 @@ export default function Landing() {
     role: "Data Analyst",
   };
 
-  const departments = [
-    { name: "Sales", icon: TrendingUp, color: "#2563eb" },
-    { name: "HR", icon: Users, color: "#9333ea" },
-    { name: "Members", icon: UserPlus, color: "#16a34a" },
-    { name: "Temp Staffing", icon: Briefcase, color: "#f97316" },
-    { name: "Recruitment", icon: Target, color: "#ec4899" },
-    { name: "Projects", icon: ClipboardList, color: "#6366f1" },
-    { name: "Admin", icon: Settings, color: "#64748b" },
-    { name: "Accounts", icon: DollarSign, color: "#059669" },
-    { name: "DAA", icon: LineChart, color: "#0ea5e9" },
-    { name: "Engineering", icon: Code2, color: "#8b5cf6" },
-    { name: "Operations", icon: Wrench, color: "#ef4444" },
+  const modules = [
+    { name: "Sales", icon: TrendingUp, color: "#3b82f6", desc: "Manage sales pipeline" },
+    { name: "HR", icon: Users, color: "#a855f7", desc: "Human resources" },
+    { name: "Members", icon: UserPlus, color: "#22c55e", desc: "Team members" },
+    { name: "Temp Staffing", icon: Briefcase, color: "#f97316", desc: "Temporary staff" },
+    { name: "Recruitment", icon: Target, color: "#ec4899", desc: "Hiring process" },
+    { name: "Projects", icon: ClipboardList, color: "#6366f1", desc: "Project tracking" },
+    { name: "Admin", icon: Settings, color: "#64748b", desc: "Admin controls" },
+    { name: "Accounts", icon: DollarSign, color: "#059669", desc: "Finance & billing" },
+    { name: "DAA", icon: LineChart, color: "#06b6d4", desc: "Market analytics" },
+    { name: "Engineering", icon: Code2, color: "#8b5cf6", desc: "Development" },
+    { name: "Operations", icon: Wrench, color: "#ef4444", desc: "Operations flow" },
   ];
 
   return (
     <div style={container}>
-      {/* ================= NAVBAR ================= */}
+      {/* ================= TOP BAR ================= */}
       <header style={topbar}>
         <div style={brand}>
           <img src={logo} alt="Brisk Olive" style={logoStyle} />
           <span style={companyName}>Brisk Olive</span>
-
-          {/* Divider line */}
-          <span style={brandDivider}></span>
         </div>
 
-        <nav style={nav}>
-          {departments.map((d) => (
-            <span key={d.name} style={navItem}>
-              {d.name}
+        {/* NAVBAR */}
+        <nav style={topNav}>
+          <span
+            style={{
+              ...topNavItem,
+              borderBottomColor: !activeModule ? "#22c55e" : "transparent",
+            }}
+            onClick={() => setActiveModule("")}
+          >
+            Home
+          </span>
+
+          {modules.map((m) => (
+            <span
+              key={m.name}
+              style={{
+                ...topNavItem,
+                borderBottomColor:
+                  activeModule === m.name ? "#22c55e" : "transparent",
+              }}
+              onClick={() => setActiveModule(m.name)}
+            >
+              {m.name}
             </span>
           ))}
         </nav>
 
-        <button style={logoutBtn}>
-          <LogOut size={16} /> Logout
-        </button>
+        {/* USER */}
+        <div style={userArea}>
+          <div style={userNameBox} onClick={() => setShowUser(!showUser)}>
+            {user.name} ▼
+          </div>
+
+          {showUser && (
+            <div style={userDropdown}>
+              <strong>{user.name}</strong>
+              <div style={email}>{user.email}</div>
+
+              <div style={divider} />
+
+              <div style={dropdownItem}>
+                <Building2 size={14} /> {user.department}
+              </div>
+              <div style={dropdownItem}>
+                <BadgeCheck size={14} /> {user.role}
+              </div>
+
+              <div style={divider} />
+              <div style={logoutItem}>
+                <LogOut size={14} /> Logout
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* ================= BODY ================= */}
       <div style={body}>
-        {/* ================= SIDEBAR ================= */}
+        {/* SIDEBAR */}
         <aside style={sidebar}>
-          <h3 style={sidebarTitle}>User Details</h3>
-          <div style={divider}></div>
+          <p style={menuTitle}>
+            {activeModule ? `${activeModule.toUpperCase()} MENU` : "MAIN MENU"}
+          </p>
 
-          <div style={infoBlock}>
-            <User size={16} style={infoIcon} />
-            <div>
-              <div style={label}>NAME</div>
-              <div style={value}>{user.name}</div>
-            </div>
-          </div>
-
-          <div style={infoBlock}>
-            <Mail size={16} style={infoIcon} />
-            <div>
-              <div style={label}>EMAIL</div>
-              <div style={value}>{user.email}</div>
-            </div>
-          </div>
-
-          <div style={infoBlock}>
-            <Building2 size={16} style={infoIcon} />
-            <div>
-              <div style={label}>DEPARTMENT</div>
-              <div style={value}>{user.department}</div>
-            </div>
-          </div>
-
-          <div style={infoBlock}>
-            <BadgeCheck size={16} style={infoIcon} />
-            <div>
-              <div style={label}>DESIGNATION</div>
-              <div style={value}>{user.role}</div>
-            </div>
-          </div>
+          {!activeModule ? (
+            <>
+              <SidebarItem icon={LayoutDashboard} label="Dashboard" active />
+              <SidebarItem icon={Bell} label="Notifications" />
+              <SidebarItem icon={Settings} label="Settings" />
+            </>
+          ) : (
+            <SidebarItem icon={Settings} label="Will update soon" active />
+          )}
         </aside>
 
-        {/* ================= MAIN CONTENT ================= */}
+        {/* MAIN CONTENT */}
         <main style={main}>
-          <section style={content}>
-            <h1 style={heading}>Welcome to Brisk Olive</h1>
-            <p style={subText}>
-              Select a module from the top navigation or choose from the options
-              below to continue.
-            </p>
+          {!activeModule ? (
+            <>
+              <h1 style={heading}>Welcome to Brisk Olive</h1>
+              <p style={subText}>
+                Select a module from the top navigation or below.
+              </p>
 
-            <div style={grid}>
-              {departments.map(({ name, icon: Icon, color }) => (
-                <div key={name} style={card}>
-                  <div style={{ ...iconBox, background: color }}>
-                    <Icon size={22} color="#fff" />
+              <div style={grid}>
+                {modules.map(({ name, icon: Icon, color, desc }) => (
+                  <div
+                    key={name}
+                    style={card}
+                    onClick={() => setActiveModule(name)}
+                  >
+                    <div style={{ ...iconBox, background: color }}>
+                      <Icon color="#fff" />
+                    </div>
+                    <h3>{name}</h3>
+                    <p style={cardDesc}>{desc}</p>
                   </div>
-                  <h3 style={cardTitle}>{name}</h3>
-                  <p style={cardDesc}>
-                    Manage {name.toLowerCase()} operations
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={dashboardCenter}>
+              {activeModule} Dashboard
             </div>
-          </section>
+          )}
         </main>
       </div>
     </div>
   );
 }
 
+/* ================= SIDEBAR ITEM ================= */
+const SidebarItem = ({ icon: Icon, label, active }) => (
+  <div
+    style={{
+      ...sidebarItem,
+      background: active ? "#059669" : "transparent",
+      color: active ? "#fff" : "#e5e7eb",
+    }}
+  >
+    <Icon size={16} /> {label}
+  </div>
+);
+
 /* ================= STYLES ================= */
 
-const container = {
-  height: "100vh",
-  display: "flex",
+const container = { 
+  height: "100vh", 
+  display: "flex", 
   flexDirection: "column",
-  background: "#f8fafc",
+  overflowY: "scroll",   // ✅ ADD THIS LINE
 };
 
-/* ---------- NAVBAR ---------- */
 const topbar = {
-  height: 100,                 // ⬅ increased height (was 78)
-  background: "#1f2a44",
+  height: 80,
+  background: "#1f2937",
   color: "#fff",
   display: "flex",
   alignItems: "center",
-  padding: "12px",
+  padding: "0 32px",
 };
 
-const brand = {
+const brand = { display: "flex", alignItems: "center", gap: 12 };
+const logoStyle = { height: 34 };
+const companyName = { fontSize: 20, fontWeight: 700 };
+
+const topNav = {
   display: "flex",
-  alignItems: "center",
-  gap: 12,
-};
-
-const logoStyle = {
-  height: 36,
-};
-
-const companyName = {
-  fontSize: 24,
-  fontWeight: 800,
-};
-
-const brandDivider = {
-  width: 1,
-  height: 28,
-  background: "rgba(255,255,255,0.4)",
-  marginLeft: 12,
-};
-
-const nav = {
-  display: "flex",
-  gap: 22,
+  gap: 16,
+  marginLeft: 20,
   flex: 1,
-  marginLeft: 40,
 };
 
-const navItem = {
-  fontSize: 14,
+/* 🔑 FIXED: border space always reserved */
+const topNavItem = {
   cursor: "pointer",
-  opacity: 0.95,
+  fontSize: 14,
+  padding: "6px 4px",
+  fontWeight: 500,
+  borderBottom: "3px solid transparent",
 };
 
-const logoutBtn = {
-  background: "#ef4444",
-  color: "#fff",
-  border: "none",
-  padding: "8px 16px",
+const userArea = { position: "relative" };
+const userNameBox = { cursor: "pointer", fontWeight: 600 };
+
+const userDropdown = {
+  position: "absolute",
+  right: 0,
+  top: 50,
+  background: "#fff",
+  color: "#111827",
+  width: 240,
+  borderRadius: 6,
+  boxShadow: "0 10px 20px rgba(0,0,0,0.2)",
+  padding: 12,
+};
+
+const email = { fontSize: 12, color: "#6b7280" };
+const divider = { height: 1, background: "#e5e7eb", margin: "10px 0" };
+const dropdownItem = { display: "flex", gap: 8, fontSize: 13 };
+const logoutItem = { display: "flex", gap: 8, color: "#dc2626", cursor: "pointer" };
+
+const body = { display: "flex", flex: 1 };
+const sidebar = { width: 240, background: "#111827", color: "#fff", padding: 16 };
+const menuTitle = { fontSize: 12, color: "#9ca3af", marginBottom: 12 };
+
+const sidebarItem = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  padding: "10px 12px",
   borderRadius: 6,
   cursor: "pointer",
-  display: "flex",
-  gap: 6,
-  alignItems: "center",
+  marginBottom: 6,
 };
 
-/* ---------- BODY ---------- */
-const body = {
-  display: "flex",
-  flex: 1,
-};
-
-/* ---------- SIDEBAR ---------- */
-const sidebar = {
-  width: 300,
-  background: "#1f2a44",
-  color: "#fff",
-  padding: "22px 20px",
-};
-
-const sidebarTitle = {
-  fontSize: 15,
-  fontWeight: 700,
-};
-
-const divider = {
-  height: 1,
-  background: "rgba(255,255,255,0.25)",
-  margin: "14px 0 22px",
-};
-
-const infoBlock = {
-  display: "flex",
-  gap: 12,
-  marginBottom: 18,
-};
-
-const infoIcon = {
-  color: "#22c55e",
-  marginTop: 3,
-};
-
-const label = {
-  fontSize: 11,
-  color: "#9ca3af",
-};
-
-const value = {
-  fontSize: 14,
-  fontWeight: 600,
-  marginTop: 2,
-};
-
-/* ---------- MAIN ---------- */
-const main = {
-  flex: 1,
-  overflowY: "auto",
-};
-
-const content = {
-  padding: 32,
-};
-
-const heading = {
-  fontSize: 28,
-  fontWeight: 700,
-};
-
-const subText = {
-  color: "#64748b",
-  marginBottom: 30,
-};
+const main = { flex: 1, background: "#f8fafc", padding: 30 };
+const heading = { fontSize: 28, fontWeight: 700, marginBottom: 10 };
+const subText = { color: "#6b7280", marginBottom: 30 };
 
 const grid = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", 
   gap: 20,
-};
+}; 
 
 const card = {
   background: "#fff",
-  borderRadius: 12,
+  borderRadius: 10,
   padding: 20,
+  cursor: "pointer",
   boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
 };
 
@@ -291,12 +277,13 @@ const iconBox = {
   marginBottom: 12,
 };
 
-const cardTitle = {
-  fontSize: 16,
-  fontWeight: 600,
-};
+const cardDesc = { fontSize: 13, color: "#6b7280" };
 
-const cardDesc = {
-  fontSize: 13,
-  color: "#64748b",
+const dashboardCenter = {
+  height: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 36,
+  fontWeight: 700,
 };

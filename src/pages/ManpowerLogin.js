@@ -84,7 +84,7 @@ export default function ManpowerLogin() {
           {/* Coordinator Login Toggle */}
 {!isCoordinator ? (
   <>
-    <p style={coordinatorText}>Are you a coordinator?</p>
+    <p style={coordinatorText}>Are you a TCS coordinator?</p>
     <button
       style={coordinatorLink}
       onClick={() => setIsCoordinator(true)}
