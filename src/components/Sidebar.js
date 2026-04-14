@@ -2,46 +2,33 @@ import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
-  const role = localStorage.getItem("userRole");
   const location = useLocation();
-  const path = location.pathname.toLowerCase();
-  const isScoringPage = path.startsWith("/scoring");
-  const isAddKpiPage = path.includes("/scoring/kpi");
-  const sidebarBg = "#ffffff";
-  const sidebarTextColor = "#0f172a";
-  const themeColor = "#1a5cff";
-  const menuTextColor = "#334155";
-  const menuActiveBg = "#1a5cff";
-  const menuHoverBg = "rgba(26,92,255,0.08)";
-  const dotColor = "#1a5cff";
-  const brandBg = "#1a5cff";
-  const brandSubColor = "#e0e7ff";
-
+  const isScoringPage = location.pathname.startsWith("/scoring");
+  
   return (
-    <aside style={{ ...sidebarStyle, background: sidebarBg, color: sidebarTextColor }}>
+    <aside style={sidebarStyle}>
       {/* BRAND */}
-      <div style={{ ...brandBox, background: brandBg }}>
+      <div style={brandBox}>
         <div style={logoCircle}>BO</div>
         <div>
-          <div style={{ ...brandTitle, color: "#ffffff" }}>Brisk Olive</div>
-          <div style={{ ...brandSub, color: brandSubColor }}>Scoring System</div>
+          <div style={brandTitle}>Brisk Olive</div>
+          <div style={brandSub}>Ticketing System</div>
         </div>
       </div>
 
       {/* MENU */}
       <nav>
         <ul style={menuStyle}>
-          <MenuItem
-            to="/scoring/kpi"
-            label="KPI"
-            theme={{ menuTextColor, menuActiveBg, menuHoverBg, dotColor }}
-          />
-          <MenuItem
-            to="/scoring/targets"
-            label="Targets"
-            theme={{ menuTextColor, menuActiveBg, menuHoverBg, dotColor }}
-          />
-        </ul>
+
+{/* SHOW ONLY ON SCORING PAGE */}
+{isScoringPage && (
+  <>
+    <MenuItem to="/scoring/kpi" label="KPI" />
+    <MenuItem to="/scoring/targets" label="Targets" />
+  </>
+)}
+
+</ul>
       </nav>
 
       {/* FOOTER */}
@@ -52,7 +39,7 @@ const Sidebar = () => {
   );
 };
 
-const MenuItem = ({ to, label, theme }) => (
+const MenuItem = ({ to, label }) => (
   <li style={{ marginBottom: 6 }}>
     <NavLink
       to={to}
@@ -62,22 +49,23 @@ const MenuItem = ({ to, label, theme }) => (
         gap: 12,
         padding: "12px 16px",
         borderRadius: 10,
-        color: isActive ? "#ffffff" : theme.menuTextColor,
+        color: isActive ? "#ffffff" : "#334155",
         textDecoration: "none",
-        background: isActive ? theme.menuActiveBg : "transparent",
+        background: isActive ? "#1a5cff" : "transparent",
         fontWeight: isActive ? 600 : 500,
         transition: "all .25s ease"
       })}
-      onMouseEnter={(e) => {
+      onMouseEnter={e => {
         if (!e.currentTarget.className.includes("active"))
-          e.currentTarget.style.background = theme.menuHoverBg;
+          e.currentTarget.style.background = "rgba(26,92,255,0.08)";
       }}
-      onMouseLeave={(e) => {
+
+      onMouseLeave={e => {
         if (!e.currentTarget.className.includes("active"))
           e.currentTarget.style.background = "transparent";
       }}
     >
-      <span style={{ ...dotIcon, background: theme.dotColor }} />
+      <span style={dotIcon} />
       {label}
     </NavLink>
   </li>
@@ -162,10 +150,3 @@ const footerStyle = {
 };
 
 export default Sidebar;
-
-
-
-
-
-
-
