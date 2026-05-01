@@ -1,11 +1,12 @@
-﻿import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const titles = {
   "/dashboard": "Dashboard",
   "/operations": "Operations Team",
   "/admin-dashboard": "Admin Dashboard",
   "/support": "Support",
-  "/scoring": "Scoring Dashboard"
+  "/scoring": "Scoring Dashboard",
+  "/scoring/kpi": "KPIs and Targets Dashboard"
 };
 
 const TopNavbar = () => {

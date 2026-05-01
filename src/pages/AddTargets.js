@@ -684,7 +684,7 @@ const readOnlyInput = {
   background: "#f8fafc",
   fontSize: 13,
   color: "#475569",
-};
+}; 
 
 const formActions = {
   display: "flex",
