@@ -1338,6 +1338,8 @@ export default function AddKPI() {
       ? EXIT_KPI_PROCESS_LINK
       : isOnboardingKpi
       ? ONBOARDING_KPI_PROCESS_LINK
+      : isHiringKpi || isHiringExperiencedKpi
+      ? "https://docs.google.com/spreadsheets/d/1pUlMGL05gnCr8Aqf-dWnzpXwTqYmW2oiONnFZw8L8qM/edit?gid=1974836380#gid=1974836380"
       : getField(row, "Process Link", "processLink") || "-";
 
     return { scoreValue, scoringScaleValue, processLinkValue };
@@ -1599,6 +1601,8 @@ export default function AddKPI() {
                       ? EXIT_KPI_PROCESS_LINK
                       : isOnboardingKpi
                       ? ONBOARDING_KPI_PROCESS_LINK
+                      : isHiringKpi || isHiringExperiencedKpi
+                      ? "https://docs.google.com/spreadsheets/d/1pUlMGL05gnCr8Aqf-dWnzpXwTqYmW2oiONnFZw8L8qM/edit?gid=1974836380#gid=1974836380"
                       : getField(row, "Process Link", "processLink") || "-";
                     const viewRowOverride = isHiringKpi || isHiringExperiencedKpi
                       ? {
@@ -1789,6 +1793,8 @@ export default function AddKPI() {
                       {assignmentFilteredRows.map((row, idx) => {
                         const kpiName = getField(row, "KPI", "kpi");
                         const department = getField(row, "Department", "department") || "-";
+                        const isHiringKpi = normalize(kpiName) === normalize(HIRING_KPI_NAME);
+                        const isHiringExperiencedKpi = normalize(kpiName) === normalize(HIRING_EXPERIENCED_KPI_NAME);
                         const { rowKey, roleValue, roleNames, assignedToValue } = getRowAssignmentDetails(row, idx);
                         const { scoreValue, scoringScaleValue, processLinkValue } = getKpiRowDisplay(row);
 
@@ -2015,13 +2021,13 @@ const Field = ({ label, children }) => (
 );
 
 const page = { minHeight: "100vh", background: "linear-gradient(135deg, #f0f4ff 0%, #f9fafb 50%, #f0f4ff 100%)", padding: 28, fontFamily: '"Poppins", "Segoe UI", sans-serif', color: "#0f172a" };
-const shell = { maxWidth: 1200, margin: "0 auto", paddingTop: 8 };
+const shell = { maxWidth: 1300, margin: "0 auto", paddingTop: 8 };
 const header = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "18px 24px", background: "linear-gradient(135deg, #186FCB 0%, #154fa5 100%)", borderRadius: 20, color: "#ffffff", boxShadow: "0 18px 40px rgba(24, 111, 203, 0.25)", backdropFilter: "blur(10px)" };
 const title = { fontSize: 26, fontWeight: 800, margin: "4px 0 2px", letterSpacing: "-0.5px" };
 const subtitle = { fontSize: 13, opacity: 0.95, fontWeight: 500 };
 const headerActions = { display: "flex", gap: 14, alignItems: "center" };
 const contentGrid = { display: "grid", gridTemplateColumns: "1fr", gap: 24, marginTop: 28 };
-const panel = { background: "#ffffff", borderRadius: 20, padding: 26, boxShadow: "0 20px 50px rgba(15, 23, 42, 0.1)", border: "1px solid rgba(24, 111, 203, 0.08)" };
+const panel = { background: "#ffffff", borderRadius: 20, padding: 20, boxShadow: "0 20px 50px rgba(15, 23, 42, 0.1)", border: "1px solid rgba(24, 111, 203, 0.08)" };
 const panelHeader = { display: "flex", flexDirection: "column", gap: 14, marginBottom: 22 };
 const panelTitle = { fontSize: 22, fontWeight: 800, color: "#0f172a", letterSpacing: "-0.3px" };
 const panelHint = { fontSize: 14, color: "#64748b", fontWeight: 500 };
